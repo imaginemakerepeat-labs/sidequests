@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Task</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 700px;
+            margin: 40px auto;
+            line-height: 1.5;
+            padding: 0 20px;
+        }
+
+        textarea {
+            width: 100%;
+            max-width: 500px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            max-width: 500px;
+        }
+    </style>
+</head>
+<body>
+    <h1>✏️ Edit Task</h1>
+
+    <form method="post">
+        <div>
+            <label for="name">Task Name:</label><br>
+            <input type="text" id="name" name="name" value="{{ task.name }}" required>
+        </div>
+
+        <br>
+
+        <div>
+            <label for="description">Description:</label><br>
+            <textarea id="description" name="description" rows="4">{{ task.description }}</textarea>
+        </div>
+
+        <br>
+
+        <div>
+            <label for="tags">Tags:</label><br>
+            <input type="text" id="tags" name="tags" value="{{ task.tags_text }}" placeholder="health, imr, family">
+        </div>
+
+        <br>
+
+        <div>
+            <label for="recurrence">Recurrence:</label><br>
+            <select id="recurrence" name="recurrence">
+                <option value="one_off" {% if task.recurrence == "one_off" %}selected{% endif %}>One-off</option>
+                <option value="daily" {% if task.recurrence == "daily" %}selected{% endif %}>Daily</option>
+                <option value="bi_weekly" {% if task.recurrence == "bi_weekly" %}selected{% endif %}>Bi-weekly</option>
+                <option value="monthly" {% if task.recurrence == "monthly" %}selected{% endif %}>Monthly</option>
+            </select>
+        </div>
+
+        <br>
+
+        <div>
+            <label for="priority">Priority:</label><br>
+            <select id="priority" name="priority">
+                <option value="1" {% if task.priority == 1 %}selected{% endif %}>Low (1)</option>
+                <option value="2" {% if task.priority == 2 %}selected{% endif %}>Medium (2)</option>
+                <option value="3" {% if task.priority == 3 %}selected{% endif %}>High (3)</option>
+            </select>
+        </div>
+
+        <br>
+
+        <button type="submit">Save Changes</button>
+    </form>
+
+    <p><a href="/">⬅ Back to list</a></p>
+</body>
+</html>

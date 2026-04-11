@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Gamified To-Do</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 40px auto;
+            line-height: 1.5;
+            padding: 0 20px;
+        }
+
+        textarea {
+            width: 100%;
+            max-width: 500px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .task-card {
+            border: 1px solid #ccc;
+            padding: 14px;
+            margin-bottom: 14px;
+            border-radius: 8px;
+        }
+
+        .meta {
+            color: #666;
+            font-size: 0.95em;
+        }
+
+        .section-title {
+            margin-top: 32px;
+        }
+
+        .actions a {
+            margin-right: 10px;
+        }
+
+        .completed {
+            background: #f7f7f7;
+        }
+
+        .archived {
+            background: #efefef;
+            opacity: 0.9;
+        }
+
+        .stats-box {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 14px;
+            margin-bottom: 24px;
+            background: #fafafa;
+        }
+
+        .stats-box strong {
+            margin-right: 12px;
+        }
+
+        .tags {
+            margin-top: 8px;
+        }
+
+        .tag {
+            display: inline-block;
+            background: #e8eefc;
+            border: 1px solid #cfd8f6;
+            border-radius: 999px;
+            padding: 2px 8px;
+            margin-right: 6px;
+            margin-bottom: 6px;
+            font-size: 0.85em;
+        }
+
+        .search-box {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 14px;
+            margin-bottom: 24px;
+            background: #fafafa;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #f1f1f1;
+            border: 1px solid #ddd;
+            border-radius: 999px;
+            padding: 2px 8px;
+            margin-left: 8px;
+            font-size: 0.8em;
+        }
+
+        .empty-message {
+            color: #666;
+            font-style: italic;
+        }
+
+        .weekly-list {
+            margin: 8px 0 0 20px;
+        }
+
+        .weekly-list li {
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎮 Gamified To-Do List</h1>
+
+    <div class="stats-box">
+        <div><strong>Level:</strong> {{ level }}</div>
+        <div><strong>Total XP:</strong> {{ xp }}</div>
+        <div><strong>Daily XP:</strong> {{ daily_xp }}</div>
+    </div>
+
+    <div class="search-box">
+        <h2>Search</h2>
+        <form action="/" method="get">
+            <input type="text" name="q" value="{{ search_query }}" placeholder="Search tasks, descriptions, tags, or recurrence">
+            <button type="submit">Search</button>
+            <a href="/">Clear</a>
+        </form>
+
+        {% if search_query %}
+            <p><strong>Showing results for:</strong> "{{ search_query }}"</p>
+        {% endif %}
+    </div>
+
+    <h2>Add Task</h2>
+    <form action="/add" method="post">
+        <div>
+            <label for="name">Task Name:</label><br>
+            <input type="text" id="name" name="name" placeholder="Task name" required>
+        </div>
+
+        <br>
+
+        <div>
+            <label for="description">Description:</label><br>
+            <textarea id="description" name="description" rows="3" placeholder="Description (optional)"></textarea>
+        </div>
+
+        <br>
+
+        <div>
+            <label for="tags">Tags:</label><br>
+            <input type="text" id="tags" name="tags" placeholder="health, imr, family">
+        </div>
+
+        <br>
+
+        <div>
+            <label for="recurrence">Recurrence:</label><br>
+            <select id="recurrence" name="recurrence">
+                <option value="one_off">One-off</option>
+                <option value="daily">Daily</option>
+                <option value="bi_weekly">Bi-weekly</option>
+                <option value="monthly">Monthly</option>
+            </select>
+        </div>
+
+        <br>
+
+        <div>
+            <label for="priority">Priority:</label><br>
+            <select id="priority" name="priority">
+                <option value="1">Low (1)</option>
+                <option value="2">Medium (2)</option>
+                <option value="3">High (3)</option>
+            </select>
+        </div>
+
+        <br>
+
+        <button type="submit">Add Task</button>
+    </form>
+
+    <h2 class="section-title">🔥 Today's Tasks</h2>
+
+    {% if today_tasks %}
+        {% for task in today_tasks %}
+            <div class="task-card">
+                <strong>{{ task.name }}</strong> (Priority: {{ task.priority }})
+                <span class="badge">{{ recurrence_label(task.recurrence) }}</span>
+
+                {% if task.description %}
+                    <p>{{ task.description }}</p>
+                {% endif %}
+
+                {% if task.tags %}
+                    <div class="tags">
+                        {% for tag in task.tags %}
+                            <span class="tag">{{ tag }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                {% if task.created_at %}
+                    <div class="meta">Created: {{ task.created_at }}</div>
+                {% endif %}
+
+                <div class="actions" style="margin-top:10px;">
+                    <a href="{{ url_for('complete', index=task._index) }}">✅ Complete</a>
+                    <a href="{{ url_for('edit', index=task._index) }}">✏️ Edit</a>
+                    <a href="{{ url_for('delete', index=task._index) }}" onclick="return confirm('Delete this active task?')">🗑️ Delete</a>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p class="empty-message">No tasks for today 🎉</p>
+    {% endif %}
+
+    <h2 class="section-title">⏳ Not Today</h2>
+
+    {% if later_tasks %}
+        {% for task in later_tasks %}
+            <div class="task-card">
+                <strong>{{ task.name }}</strong> (Priority: {{ task.priority }})
+                <span class="badge">{{ recurrence_label(task.recurrence) }}</span>
+
+                {% if task.description %}
+                    <p>{{ task.description }}</p>
+                {% endif %}
+
+                {% if task.tags %}
+                    <div class="tags">
+                        {% for tag in task.tags %}
+                            <span class="tag">{{ tag }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                {% if task.created_at %}
+                    <div class="meta">Created: {{ task.created_at }}</div>
+                {% endif %}
+
+                {% if task.next_due_at %}
+                    <div class="meta">Next due: {{ task.next_due_at }}</div>
+                {% endif %}
+
+                <div class="actions" style="margin-top:10px;">
+                    <a href="{{ url_for('complete', index=task._index) }}">✅ Complete</a>
+                    <a href="{{ url_for('edit', index=task._index) }}">✏️ Edit</a>
+                    <a href="{{ url_for('delete', index=task._index) }}" onclick="return confirm('Delete this active task?')">🗑️ Delete</a>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p class="empty-message">No upcoming tasks.</p>
+    {% endif %}
+
+    <h2 class="section-title">📅 Completed This Week</h2>
+
+    {% if weekly_completed %}
+        {% for day_key, day in weekly_completed %}
+            <div class="task-card">
+                <strong>{{ day.label }}</strong>
+                <div class="meta">Completed: {{ day.count }} | XP: {{ day.xp }}</div>
+
+                {% if day.tasks %}
+                    <ul class="weekly-list">
+                        {% for task_name in day.tasks %}
+                            <li>{{ task_name }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="empty-message">No completed tasks.</p>
+                {% endif %}
+            </div>
+        {% endfor %}
+    {% else %}
+        <p class="empty-message">No weekly data available.</p>
+    {% endif %}
+
+    <h2 class="section-title">Completed Tasks</h2>
+
+    {% if completed_tasks %}
+        {% for task in completed_tasks %}
+            <div class="task-card completed">
+                <strong>{{ task.name }}</strong> (Priority: {{ task.priority }})
+                <span class="badge">{{ recurrence_label(task.recurrence) }}</span>
+
+                {% if task.description %}
+                    <p>{{ task.description }}</p>
+                {% endif %}
+
+                {% if task.tags %}
+                    <div class="tags">
+                        {% for tag in task.tags %}
+                            <span class="tag">{{ tag }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                {% if task.completed_at %}
+                    <div class="meta">Completed: {{ task.completed_at }}</div>
+                {% endif %}
+
+                {% if task.earned_xp %}
+                    <div class="meta">XP Earned: {{ task.earned_xp }}</div>
+                {% endif %}
+
+                <div class="actions" style="margin-top:10px;">
+                    <a href="/archive_completed/{{ loop.index0 }}">📦 Archive</a>
+                    <a href="/delete_completed/{{ loop.index0 }}" onclick="return confirm('Delete this completed task?')">🗑️ Delete</a>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p class="empty-message">No completed tasks found.</p>
+    {% endif %}
+
+    <h2 class="section-title">Archived Tasks</h2>
+
+    {% if archived_tasks %}
+        {% for task in archived_tasks %}
+            <div class="task-card archived">
+                <strong>{{ task.name }}</strong> (Priority: {{ task.priority }})
+                <span class="badge">{{ recurrence_label(task.recurrence) }}</span>
+
+                {% if task.description %}
+                    <p>{{ task.description }}</p>
+                {% endif %}
+
+                {% if task.tags %}
+                    <div class="tags">
+                        {% for tag in task.tags %}
+                            <span class="tag">{{ tag }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                {% if task.completed_at %}
+                    <div class="meta">Completed: {{ task.completed_at }}</div>
+                {% endif %}
+
+                {% if task.archived_at %}
+                    <div class="meta">Archived: {{ task.archived_at }}</div>
+                {% endif %}
+
+                <div class="actions" style="margin-top:10px;">
+                    <a href="/restore_archived/{{ loop.index0 }}">♻️ Restore to Active</a>
+                    <a href="/delete_archived/{{ loop.index0 }}" onclick="return confirm('Delete this archived task?')">🗑️ Delete</a>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p class="empty-message">No archived tasks found.</p>
+    {% endif %}
+</body>
+</html> 

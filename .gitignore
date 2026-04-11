@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# Data (contains personal tasks — use tasks_data.example.json as a template)
+tasks_data.json
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
