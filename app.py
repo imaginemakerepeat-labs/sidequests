@@ -170,7 +170,7 @@ def filter_tasks(tasks, query):
 
 
 def parse_recurrence(value):
-    allowed = ["one_off", "daily", "bi_weekly", "monthly"]
+    allowed = ["one_off", "daily", "weekly", "bi_weekly", "monthly"]
     if value in allowed:
         return value
     return "one_off"
@@ -180,6 +180,7 @@ def recurrence_label(value):
     labels = {
         "one_off": "One-off",
         "daily": "Daily",
+        "weekly": "Weekly",
         "bi_weekly": "Bi-weekly",
         "monthly": "Monthly"
     }
@@ -206,6 +207,8 @@ def next_due_datetime(recurrence, base_dt=None):
 
     if recurrence == "daily":
         return base_dt + timedelta(days=1)
+    if recurrence == "weekly":
+        return base_dt + timedelta(days=7)
     if recurrence == "bi_weekly":
         return base_dt + timedelta(days=14)
     if recurrence == "monthly":

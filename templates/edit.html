@@ -52,6 +52,7 @@
             <select id="recurrence" name="recurrence">
                 <option value="one_off" {% if task.recurrence == "one_off" %}selected{% endif %}>One-off</option>
                 <option value="daily" {% if task.recurrence == "daily" %}selected{% endif %}>Daily</option>
+                <option value="weekly" {% if task.recurrence == "weekly" %}selected{% endif %}>Weekly</option>
                 <option value="bi_weekly" {% if task.recurrence == "bi_weekly" %}selected{% endif %}>Bi-weekly</option>
                 <option value="monthly" {% if task.recurrence == "monthly" %}selected{% endif %}>Monthly</option>
             </select>
