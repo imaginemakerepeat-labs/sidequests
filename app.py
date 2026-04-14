@@ -249,18 +249,19 @@ def parse_datetime_safe(value):
 def sort_tasks(tasks):
     def task_sort_key(task):
         recurrence = task.get("recurrence", "one_off")
+        priority_order = -task.get("priority", 1)  # negate so high (3) sorts first
 
         if recurrence == "one_off":
-            return (0, 0)
+            return (0, 0, priority_order)
 
         next_due_str = task.get("next_due_at")
 
         if next_due_str:
             dt = parse_datetime_safe(next_due_str)
             if dt:
-                return (1, dt.timestamp())
+                return (1, dt.timestamp(), priority_order)
 
-        return (2, float("inf"))
+        return (2, float("inf"), priority_order)
 
     return sorted(tasks, key=task_sort_key)
 
