@@ -1,357 +1,787 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Gamified To-Do</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SideQuest</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg:        #0e0f14;
+            --surface:   #16181f;
+            --surface2:  #1e2029;
+            --border:    #2a2d3a;
+            --accent:    #f0c040;
+            --accent2:   #5b8cff;
+            --success:   #3ecf6e;
+            --danger:    #ff5b5b;
+            --muted:     #555970;
+            --text:      #e4e6f0;
+            --subtext:   #8b8fa8;
+            --p1:        #555970;
+            --p2:        #5b8cff;
+            --p3:        #f0c040;
+            --mono:      'Space Mono', monospace;
+            --sans:      'DM Sans', sans-serif;
+            --radius:    10px;
+            --radius-sm: 6px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
         body {
-            font-family: Arial, sans-serif;
-            max-width: 900px;
-            margin: 40px auto;
-            line-height: 1.5;
-            padding: 0 20px;
+            font-family: var(--sans);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 0 0 80px;
         }
 
-        textarea {
-            width: 100%;
-            max-width: 500px;
+        /* HEADER */
+        .header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
-        input[type="text"] {
-            width: 100%;
-            max-width: 500px;
+        .logo {
+            font-family: var(--mono);
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--accent);
+            letter-spacing: 0.05em;
         }
 
-        .task-card {
-            border: 1px solid #ccc;
-            padding: 14px;
-            margin-bottom: 14px;
-            border-radius: 8px;
+        .logo span { color: var(--subtext); font-weight: 400; }
+
+        .xp-cluster {
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
-        .meta {
-            color: #666;
-            font-size: 0.95em;
+        .level-badge {
+            font-family: var(--mono);
+            font-size: 0.72rem;
+            background: var(--accent);
+            color: #000;
+            padding: 3px 8px;
+            border-radius: var(--radius-sm);
+            font-weight: 700;
         }
 
-        .section-title {
-            margin-top: 32px;
+        .xp-bar-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            min-width: 130px;
         }
 
-        .actions a {
-            margin-right: 10px;
+        .xp-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.65rem;
+            color: var(--subtext);
+            font-family: var(--mono);
         }
 
-        .completed {
-            background: #f7f7f7;
+        .xp-bar {
+            height: 5px;
+            background: var(--border);
+            border-radius: 999px;
+            overflow: hidden;
         }
 
-        .archived {
-            background: #efefef;
-            opacity: 0.9;
+        .xp-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent2), var(--accent));
+            border-radius: 999px;
         }
 
-        .stats-box {
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            padding: 14px;
+        /* SEARCH */
+        .search-strip {
+            padding: 10px 24px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            gap: 8px;
+        }
+
+        .search-strip form {
+            display: flex;
+            gap: 8px;
+            flex: 1;
+            max-width: 480px;
+        }
+
+        .search-input {
+            flex: 1;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 7px 12px;
+            border-radius: var(--radius-sm);
+            font-family: var(--sans);
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        .search-input:focus { border-color: var(--accent2); }
+        .search-input::placeholder { color: var(--muted); }
+
+        /* BUTTONS */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-family: var(--sans);
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 7px 13px;
+            border-radius: var(--radius-sm);
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            transition: opacity 0.15s, transform 0.1s;
+            white-space: nowrap;
+        }
+
+        .btn:active { transform: scale(0.97); }
+        .btn-primary { background: var(--accent); color: #000; }
+        .btn-ghost   { background: transparent; color: var(--subtext); border: 1px solid var(--border); }
+        .btn-ghost:hover { color: var(--text); }
+        .btn-success { background: var(--success); color: #000; font-size: 0.78rem; }
+        .btn-sm      { font-size: 0.72rem; padding: 4px 9px; }
+        .btn-edit    { background: transparent; color: var(--accent2); border: 1px solid transparent; }
+        .btn-edit:hover { border-color: var(--accent2); }
+        .btn-danger  { background: transparent; color: var(--danger); border: 1px solid transparent; }
+        .btn-danger:hover { border-color: var(--danger); }
+        .btn-archive { background: transparent; color: var(--subtext); border: 1px solid transparent; }
+        .btn-archive:hover { border-color: var(--border); color: var(--text); }
+        .btn-restore { background: transparent; color: var(--success); border: 1px solid transparent; }
+        .btn-restore:hover { border-color: var(--success); }
+
+        /* MAIN */
+        .main {
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 22px 24px 0;
+        }
+
+        /* ADD PANEL */
+        .add-panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
             margin-bottom: 24px;
-            background: #fafafa;
+            overflow: hidden;
         }
 
-        .stats-box strong {
-            margin-right: 12px;
+        .add-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 13px 16px;
+            cursor: pointer;
+            user-select: none;
         }
 
-        .tags {
-            margin-top: 8px;
+        .add-panel-header:hover { background: var(--surface2); }
+
+        .add-panel-title {
+            font-family: var(--mono);
+            font-size: 0.75rem;
+            color: var(--accent);
+            letter-spacing: 0.08em;
+        }
+
+        .chevron {
+            color: var(--muted);
+            font-size: 0.7rem;
+            transition: transform 0.2s;
+        }
+
+        .add-panel.open .chevron { transform: rotate(180deg); }
+
+        .add-form {
+            display: none;
+            padding: 0 16px 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .add-panel.open .add-form { display: block; }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 14px;
+        }
+
+        .form-col-full { grid-column: 1 / -1; }
+
+        .field label {
+            display: block;
+            font-size: 0.68rem;
+            font-weight: 600;
+            color: var(--subtext);
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            margin-bottom: 5px;
+        }
+
+        .field input,
+        .field textarea,
+        .field select {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 8px 11px;
+            border-radius: var(--radius-sm);
+            font-family: var(--sans);
+            font-size: 0.85rem;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .field input:focus,
+        .field textarea:focus,
+        .field select:focus { border-color: var(--accent2); }
+        .field input::placeholder,
+        .field textarea::placeholder { color: var(--muted); }
+        .field textarea { resize: vertical; min-height: 68px; }
+
+        .form-actions { margin-top: 14px; display: flex; gap: 8px; }
+
+        /* SECTION */
+        .section { margin-bottom: 24px; }
+
+        .section-head {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .section-head h2 {
+            font-family: var(--mono);
+            font-size: 0.74rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--subtext);
+        }
+
+        .section-count {
+            font-family: var(--mono);
+            font-size: 0.65rem;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--muted);
+            padding: 1px 6px;
+            border-radius: 999px;
+        }
+
+        .section-toggle {
+            font-size: 0.6rem;
+            color: var(--muted);
+            margin-left: auto;
+        }
+
+        .section-body { display: block; }
+        .section.collapsed .section-body { display: none; }
+
+        /* TASK CARD */
+        .task-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 13px 15px;
+            margin-bottom: 7px;
+            border-left: 3px solid var(--border);
+        }
+
+        .task-card:hover { background: var(--surface2); }
+        .task-card.p1 { border-left-color: var(--p1); }
+        .task-card.p2 { border-left-color: var(--p2); }
+        .task-card.p3 { border-left-color: var(--p3); }
+        .task-card.done { border-left-color: var(--success); opacity: 0.7; }
+        .task-card.archived-card { opacity: 0.5; }
+
+        .task-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .task-name {
+            font-size: 0.92rem;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        .task-badges { display: flex; gap: 5px; flex-shrink: 0; }
+
+        .badge {
+            font-family: var(--mono);
+            font-size: 0.62rem;
+            padding: 2px 6px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            color: var(--subtext);
+        }
+
+        .badge.recur { border-color: var(--accent2); color: var(--accent2); }
+        .badge.xp    { border-color: var(--accent);  color: var(--accent); }
+
+        .task-desc {
+            font-size: 0.82rem;
+            color: var(--subtext);
+            margin-top: 5px;
+            line-height: 1.5;
+        }
+
+        .task-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: 7px;
         }
 
         .tag {
-            display: inline-block;
-            background: #e8eefc;
-            border: 1px solid #cfd8f6;
+            font-size: 0.68rem;
+            background: #1a2040;
+            border: 1px solid #2a3560;
+            color: #7a9cdf;
+            padding: 2px 7px;
             border-radius: 999px;
-            padding: 2px 8px;
-            margin-right: 6px;
-            margin-bottom: 6px;
-            font-size: 0.85em;
         }
 
-        .search-box {
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            padding: 14px;
-            margin-bottom: 24px;
-            background: #fafafa;
+        .task-meta {
+            font-size: 0.68rem;
+            color: var(--muted);
+            margin-top: 7px;
+            font-family: var(--mono);
         }
 
-        .badge {
-            display: inline-block;
-            background: #f1f1f1;
-            border: 1px solid #ddd;
-            border-radius: 999px;
-            padding: 2px 8px;
-            margin-left: 8px;
-            font-size: 0.8em;
+        .task-actions {
+            display: flex;
+            gap: 5px;
+            margin-top: 11px;
+            flex-wrap: wrap;
+            align-items: center;
         }
 
-        .empty-message {
-            color: #666;
+        /* PRIORITY LEGEND */
+        .priority-legend {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .priority-legend span {
+            font-size: 0.68rem;
+            color: var(--muted);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .dot { width: 7px; height: 7px; border-radius: 50%; }
+        .dot.p1 { background: var(--p1); }
+        .dot.p2 { background: var(--p2); }
+        .dot.p3 { background: var(--p3); }
+
+        /* WEEK GRID */
+        .week-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            margin-bottom: 8px;
+        }
+
+        .week-day {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 8px 4px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.15s;
+        }
+
+        .week-day:hover,
+        .week-day.active-day { border-color: var(--accent2); }
+        .week-day.has-tasks  { background: var(--surface2); }
+
+        .week-day-name {
+            font-family: var(--mono);
+            font-size: 0.55rem;
+            color: var(--muted);
+            text-transform: uppercase;
+        }
+
+        .week-day-count {
+            font-family: var(--mono);
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text);
+            margin: 3px 0 2px;
+        }
+
+        .week-day-count.zero { color: var(--border); }
+
+        .week-day-xp {
+            font-family: var(--mono);
+            font-size: 0.55rem;
+            color: var(--accent);
+        }
+
+        .week-detail {
+            display: none;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 11px 13px;
+            margin-top: 4px;
+        }
+
+        .week-detail.visible { display: block; }
+
+        .week-detail-title {
+            font-family: var(--mono);
+            font-size: 0.68rem;
+            color: var(--subtext);
+            margin-bottom: 7px;
+        }
+
+        .week-detail ul { list-style: none; display: flex; flex-direction: column; gap: 3px; }
+
+        .week-detail li {
+            font-size: 0.8rem;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .week-detail li::before { content: '✓'; color: var(--success); font-size: 0.65rem; }
+
+        /* EMPTY */
+        .empty {
+            text-align: center;
+            padding: 24px 0;
+            color: var(--muted);
+            font-size: 0.82rem;
             font-style: italic;
+            border: 1px dashed var(--border);
+            border-radius: var(--radius);
         }
 
-        .weekly-list {
-            margin: 8px 0 0 20px;
+        .search-notice {
+            font-size: 0.75rem;
+            color: var(--subtext);
+            margin-bottom: 12px;
+            font-family: var(--mono);
         }
 
-        .weekly-list li {
-            margin-bottom: 4px;
-        }
+        .search-notice strong { color: var(--accent); }
     </style>
 </head>
 <body>
-    <h1>🎮 Gamified To-Do List</h1>
 
-    <div class="stats-box">
-        <div><strong>Level:</strong> {{ level }}</div>
-        <div><strong>Total XP:</strong> {{ xp }}</div>
-        <div><strong>Daily XP:</strong> {{ daily_xp }}</div>
+<header class="header">
+    <div class="logo">SIDE<span>QUEST</span></div>
+    <div class="xp-cluster">
+        <div class="level-badge">LVL {{ level }}</div>
+        <div class="xp-bar-wrap">
+            <div class="xp-labels">
+                <span>{{ daily_xp }} XP today</span>
+                <span>{{ xp }} total</span>
+            </div>
+            <div class="xp-bar">
+                <div class="xp-fill" style="width: {{ [((xp % 50) / 50 * 100), 100] | min }}%"></div>
+            </div>
+        </div>
     </div>
+</header>
 
-    <div class="search-box">
-        <h2>Search</h2>
-        <form action="/" method="get">
-            <input type="text" name="q" value="{{ search_query }}" placeholder="Search tasks, descriptions, tags, or recurrence">
-            <button type="submit">Search</button>
-            <a href="/">Clear</a>
-        </form>
-
-        {% if search_query %}
-            <p><strong>Showing results for:</strong> "{{ search_query }}"</p>
-        {% endif %}
-    </div>
-
-    <h2>Add Task</h2>
-    <form action="/add" method="post">
-        <div>
-            <label for="name">Task Name:</label><br>
-            <input type="text" id="name" name="name" placeholder="Task name" required>
-        </div>
-
-        <br>
-
-        <div>
-            <label for="description">Description:</label><br>
-            <textarea id="description" name="description" rows="3" placeholder="Description (optional)"></textarea>
-        </div>
-
-        <br>
-
-        <div>
-            <label for="tags">Tags:</label><br>
-            <input type="text" id="tags" name="tags" placeholder="health, imr, family">
-        </div>
-
-        <br>
-
-        <div>
-            <label for="recurrence">Recurrence:</label><br>
-            <select id="recurrence" name="recurrence">
-                <option value="one_off">One-off</option>
-                <option value="daily">Daily</option>
-                <option value="weekly">Weekly</option>
-                <option value="bi_weekly">Bi-weekly</option>
-                <option value="monthly">Monthly</option>
-            </select>
-        </div>
-
-        <br>
-
-        <div>
-            <label for="priority">Priority:</label><br>
-            <select id="priority" name="priority">
-                <option value="1">Low (1)</option>
-                <option value="2">Medium (2)</option>
-                <option value="3">High (3)</option>
-            </select>
-        </div>
-
-        <br>
-
-        <button type="submit">Add Task</button>
+<div class="search-strip">
+    <form action="/" method="get">
+        <input class="search-input" type="text" name="q" value="{{ search_query }}" placeholder="Search tasks, tags, recurrence…">
+        <button class="btn btn-ghost" type="submit">Search</button>
+        {% if search_query %}<a class="btn btn-ghost" href="/">✕ Clear</a>{% endif %}
     </form>
+</div>
 
-    <h2 class="section-title">🔥 Today's Tasks</h2>
+<div class="main">
 
-    {% if today_tasks %}
-        {% for task in today_tasks %}
-            <div class="task-card">
-                <strong>{{ task.name }}</strong> (Priority: {{ task.priority }})
-                <span class="badge">{{ recurrence_label(task.recurrence) }}</span>
+    {% if search_query %}
+        <p class="search-notice">Results for <strong>"{{ search_query }}"</strong></p>
+    {% endif %}
 
-                {% if task.description %}
-                    <p>{{ task.description }}</p>
-                {% endif %}
-
-                {% if task.tags %}
-                    <div class="tags">
-                        {% for tag in task.tags %}
-                            <span class="tag">{{ tag }}</span>
-                        {% endfor %}
+    <!-- ADD TASK -->
+    <div class="add-panel" id="addPanel">
+        <div class="add-panel-header" onclick="toggleAdd()">
+            <span class="add-panel-title">＋ NEW TASK</span>
+            <span class="chevron">▼</span>
+        </div>
+        <div class="add-form">
+            <form action="/add" method="post">
+                <div class="form-grid">
+                    <div class="field form-col-full">
+                        <label>Task Name</label>
+                        <input type="text" name="name" placeholder="What needs doing?" required>
                     </div>
-                {% endif %}
-
-                {% if task.created_at %}
-                    <div class="meta">Created: {{ task.created_at }}</div>
-                {% endif %}
-
-                <div class="actions" style="margin-top:10px;">
-                    <a href="{{ url_for('complete', index=task._index) }}">✅ Complete</a>
-                    <a href="{{ url_for('edit', index=task._index) }}">✏️ Edit</a>
-                    <a href="{{ url_for('delete', index=task._index) }}" onclick="return confirm('Delete this active task?')">🗑️ Delete</a>
-                </div>
-            </div>
-        {% endfor %}
-    {% else %}
-        <p class="empty-message">No tasks for today 🎉</p>
-    {% endif %}
-
-    <h2 class="section-title">⏳ Not Today</h2>
-
-    {% if later_tasks %}
-        {% for task in later_tasks %}
-            <div class="task-card">
-                <strong>{{ task.name }}</strong> (Priority: {{ task.priority }})
-                <span class="badge">{{ recurrence_label(task.recurrence) }}</span>
-
-                {% if task.description %}
-                    <p>{{ task.description }}</p>
-                {% endif %}
-
-                {% if task.tags %}
-                    <div class="tags">
-                        {% for tag in task.tags %}
-                            <span class="tag">{{ tag }}</span>
-                        {% endfor %}
+                    <div class="field form-col-full">
+                        <label>Description</label>
+                        <textarea name="description" placeholder="Optional notes…"></textarea>
                     </div>
-                {% endif %}
-
-                {% if task.created_at %}
-                    <div class="meta">Created: {{ task.created_at }}</div>
-                {% endif %}
-
-                {% if task.next_due_at %}
-                    <div class="meta">Next due: {{ task.next_due_at }}</div>
-                {% endif %}
-
-                <div class="actions" style="margin-top:10px;">
-                    <a href="{{ url_for('complete', index=task._index) }}">✅ Complete</a>
-                    <a href="{{ url_for('edit', index=task._index) }}">✏️ Edit</a>
-                    <a href="{{ url_for('delete', index=task._index) }}" onclick="return confirm('Delete this active task?')">🗑️ Delete</a>
-                </div>
-            </div>
-        {% endfor %}
-    {% else %}
-        <p class="empty-message">No upcoming tasks.</p>
-    {% endif %}
-
-    <h2 class="section-title">📅 Completed This Week</h2>
-
-    {% if weekly_completed %}
-        {% for day_key, day in weekly_completed %}
-            <div class="task-card">
-                <strong>{{ day.label }}</strong>
-                <div class="meta">Completed: {{ day.count }} | XP: {{ day.xp }}</div>
-
-                {% if day.tasks %}
-                    <ul class="weekly-list">
-                        {% for task_name in day.tasks %}
-                            <li>{{ task_name }}</li>
-                        {% endfor %}
-                    </ul>
-                {% else %}
-                    <p class="empty-message">No completed tasks.</p>
-                {% endif %}
-            </div>
-        {% endfor %}
-    {% else %}
-        <p class="empty-message">No weekly data available.</p>
-    {% endif %}
-
-    <h2 class="section-title">Completed Tasks</h2>
-
-    {% if completed_tasks %}
-        {% for task in completed_tasks %}
-            <div class="task-card completed">
-                <strong>{{ task.name }}</strong> (Priority: {{ task.priority }})
-                <span class="badge">{{ recurrence_label(task.recurrence) }}</span>
-
-                {% if task.description %}
-                    <p>{{ task.description }}</p>
-                {% endif %}
-
-                {% if task.tags %}
-                    <div class="tags">
-                        {% for tag in task.tags %}
-                            <span class="tag">{{ tag }}</span>
-                        {% endfor %}
+                    <div class="field">
+                        <label>Tags</label>
+                        <input type="text" name="tags" placeholder="health, work, family">
                     </div>
-                {% endif %}
-
-                {% if task.completed_at %}
-                    <div class="meta">Completed: {{ task.completed_at }}</div>
-                {% endif %}
-
-                {% if task.earned_xp %}
-                    <div class="meta">XP Earned: {{ task.earned_xp }}</div>
-                {% endif %}
-
-                <div class="actions" style="margin-top:10px;">
-                    <a href="/archive_completed/{{ loop.index0 }}">📦 Archive</a>
-                    <a href="/delete_completed/{{ loop.index0 }}" onclick="return confirm('Delete this completed task?')">🗑️ Delete</a>
-                </div>
-            </div>
-        {% endfor %}
-    {% else %}
-        <p class="empty-message">No completed tasks found.</p>
-    {% endif %}
-
-    <h2 class="section-title">Archived Tasks</h2>
-
-    {% if archived_tasks %}
-        {% for task in archived_tasks %}
-            <div class="task-card archived">
-                <strong>{{ task.name }}</strong> (Priority: {{ task.priority }})
-                <span class="badge">{{ recurrence_label(task.recurrence) }}</span>
-
-                {% if task.description %}
-                    <p>{{ task.description }}</p>
-                {% endif %}
-
-                {% if task.tags %}
-                    <div class="tags">
-                        {% for tag in task.tags %}
-                            <span class="tag">{{ tag }}</span>
-                        {% endfor %}
+                    <div class="field">
+                        <label>Recurrence</label>
+                        <select name="recurrence">
+                            <option value="one_off">One-off</option>
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="bi_weekly">Bi-weekly</option>
+                            <option value="monthly">Monthly</option>
+                        </select>
                     </div>
-                {% endif %}
-
-                {% if task.completed_at %}
-                    <div class="meta">Completed: {{ task.completed_at }}</div>
-                {% endif %}
-
-                {% if task.archived_at %}
-                    <div class="meta">Archived: {{ task.archived_at }}</div>
-                {% endif %}
-
-                <div class="actions" style="margin-top:10px;">
-                    <a href="/restore_archived/{{ loop.index0 }}">♻️ Restore to Active</a>
-                    <a href="/delete_archived/{{ loop.index0 }}" onclick="return confirm('Delete this archived task?')">🗑️ Delete</a>
+                    <div class="field">
+                        <label>Priority</label>
+                        <select name="priority">
+                            <option value="1">Low</option>
+                            <option value="2">Medium</option>
+                            <option value="3">High</option>
+                        </select>
+                    </div>
                 </div>
+                <div class="form-actions">
+                    <button class="btn btn-primary" type="submit">Add Task</button>
+                    <button class="btn btn-ghost" type="button" onclick="toggleAdd()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- TODAY -->
+    <div class="section" id="sec-today">
+        <div class="section-head" onclick="toggleSection('sec-today')">
+            <h2>🔥 Today</h2>
+            <span class="section-count">{{ today_tasks | length }}</span>
+            <span class="section-toggle">▾</span>
+        </div>
+        <div class="section-body">
+            <div class="priority-legend">
+                <span><span class="dot p3"></span>High</span>
+                <span><span class="dot p2"></span>Medium</span>
+                <span><span class="dot p1"></span>Low</span>
             </div>
-        {% endfor %}
-    {% else %}
-        <p class="empty-message">No archived tasks found.</p>
-    {% endif %}
+            {% if today_tasks %}
+                {% for task in today_tasks %}
+                    <div class="task-card p{{ task.priority }}">
+                        <div class="task-top">
+                            <span class="task-name">{{ task.name }}</span>
+                            <div class="task-badges">
+                                {% if task.recurrence != 'one_off' %}
+                                    <span class="badge recur">{{ recurrence_label(task.recurrence) }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if task.description %}<div class="task-desc">{{ task.description }}</div>{% endif %}
+                        {% if task.tags %}
+                            <div class="task-tags">
+                                {% for tag in task.tags %}<span class="tag">{{ tag }}</span>{% endfor %}
+                            </div>
+                        {% endif %}
+                        {% if task.created_at %}<div class="task-meta">Added {{ task.created_at }}</div>{% endif %}
+                        <div class="task-actions">
+                            <a class="btn btn-success btn-sm" href="{{ url_for('complete', index=task._index) }}">✓ Complete</a>
+                            <a class="btn btn-edit btn-sm" href="{{ url_for('edit', index=task._index) }}">✏ Edit</a>
+                            <a class="btn btn-danger btn-sm" href="{{ url_for('delete', index=task._index) }}" onclick="return confirm('Delete this task?')">✕ Delete</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty">All clear for today 🎉</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- UPCOMING -->
+    <div class="section" id="sec-later">
+        <div class="section-head" onclick="toggleSection('sec-later')">
+            <h2>⏳ Upcoming</h2>
+            <span class="section-count">{{ later_tasks | length }}</span>
+            <span class="section-toggle">▾</span>
+        </div>
+        <div class="section-body">
+            {% if later_tasks %}
+                {% for task in later_tasks %}
+                    <div class="task-card p{{ task.priority }}">
+                        <div class="task-top">
+                            <span class="task-name">{{ task.name }}</span>
+                            <div class="task-badges">
+                                {% if task.recurrence != 'one_off' %}
+                                    <span class="badge recur">{{ recurrence_label(task.recurrence) }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if task.description %}<div class="task-desc">{{ task.description }}</div>{% endif %}
+                        {% if task.tags %}
+                            <div class="task-tags">
+                                {% for tag in task.tags %}<span class="tag">{{ tag }}</span>{% endfor %}
+                            </div>
+                        {% endif %}
+                        {% if task.next_due_at %}<div class="task-meta">Due {{ task.next_due_at }}</div>{% endif %}
+                        <div class="task-actions">
+                            <a class="btn btn-success btn-sm" href="{{ url_for('complete', index=task._index) }}">✓ Complete</a>
+                            <a class="btn btn-edit btn-sm" href="{{ url_for('edit', index=task._index) }}">✏ Edit</a>
+                            <a class="btn btn-danger btn-sm" href="{{ url_for('delete', index=task._index) }}" onclick="return confirm('Delete this task?')">✕ Delete</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty">No upcoming tasks.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- THIS WEEK -->
+    <div class="section" id="sec-week">
+        <div class="section-head" onclick="toggleSection('sec-week')">
+            <h2>📅 This Week</h2>
+            <span class="section-toggle">▾</span>
+        </div>
+        <div class="section-body">
+            {% if weekly_completed %}
+                <div class="week-grid">
+                    {% for day_key, day in weekly_completed %}
+                        <div class="week-day {% if day.count > 0 %}has-tasks{% endif %}" onclick="showWeekDay('{{ day_key }}')">
+                            <div class="week-day-name">{{ day.label.split(',')[0][:3] }}</div>
+                            <div class="week-day-count {% if day.count == 0 %}zero{% endif %}">{{ day.count }}</div>
+                            {% if day.xp > 0 %}<div class="week-day-xp">+{{ day.xp }}</div>{% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+                {% for day_key, day in weekly_completed %}
+                    <div class="week-detail" id="week-{{ day_key }}">
+                        <div class="week-detail-title">{{ day.label }} — {{ day.count }} completed · {{ day.xp }} XP</div>
+                        {% if day.tasks %}
+                            <ul>{% for t in day.tasks %}<li>{{ t }}</li>{% endfor %}</ul>
+                        {% else %}
+                            <span style="color:var(--muted);font-size:0.78rem;">No tasks completed.</span>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty">No data yet this week.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- COMPLETED -->
+    <div class="section collapsed" id="sec-completed">
+        <div class="section-head" onclick="toggleSection('sec-completed')">
+            <h2>✅ Completed</h2>
+            <span class="section-count">{{ completed_tasks | length }}</span>
+            <span class="section-toggle">▾</span>
+        </div>
+        <div class="section-body">
+            {% if completed_tasks %}
+                {% for task in completed_tasks %}
+                    <div class="task-card done">
+                        <div class="task-top">
+                            <span class="task-name">{{ task.name }}</span>
+                            {% if task.earned_xp %}<span class="badge xp">+{{ task.earned_xp }} XP</span>{% endif %}
+                        </div>
+                        {% if task.tags %}
+                            <div class="task-tags">
+                                {% for tag in task.tags %}<span class="tag">{{ tag }}</span>{% endfor %}
+                            </div>
+                        {% endif %}
+                        {% if task.completed_at %}<div class="task-meta">{{ task.completed_at }}</div>{% endif %}
+                        <div class="task-actions">
+                            <a class="btn btn-archive btn-sm" href="/archive_completed/{{ loop.index0 }}">📦 Archive</a>
+                            <a class="btn btn-danger btn-sm" href="/delete_completed/{{ loop.index0 }}" onclick="return confirm('Delete this completed task?')">✕ Delete</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty">No completed tasks.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ARCHIVED -->
+    <div class="section collapsed" id="sec-archived">
+        <div class="section-head" onclick="toggleSection('sec-archived')">
+            <h2>📦 Archived</h2>
+            <span class="section-count">{{ archived_tasks | length }}</span>
+            <span class="section-toggle">▾</span>
+        </div>
+        <div class="section-body">
+            {% if archived_tasks %}
+                {% for task in archived_tasks %}
+                    <div class="task-card archived-card">
+                        <div class="task-top">
+                            <span class="task-name">{{ task.name }}</span>
+                        </div>
+                        {% if task.tags %}
+                            <div class="task-tags">
+                                {% for tag in task.tags %}<span class="tag">{{ tag }}</span>{% endfor %}
+                            </div>
+                        {% endif %}
+                        {% if task.archived_at %}<div class="task-meta">Archived {{ task.archived_at }}</div>{% endif %}
+                        <div class="task-actions">
+                            <a class="btn btn-restore btn-sm" href="/restore_archived/{{ loop.index0 }}">♻ Restore</a>
+                            <a class="btn btn-danger btn-sm" href="/delete_archived/{{ loop.index0 }}" onclick="return confirm('Permanently delete?')">✕ Delete</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty">Nothing archived yet.</div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function toggleAdd() {
+        document.getElementById('addPanel').classList.toggle('open');
+    }
+
+    function toggleSection(id) {
+        document.getElementById(id).classList.toggle('collapsed');
+    }
+
+    let activeWeekDay = null;
+
+    function showWeekDay(dayKey) {
+        if (activeWeekDay && activeWeekDay !== dayKey) {
+            const prev = document.getElementById('week-' + activeWeekDay);
+            if (prev) prev.classList.remove('visible');
+        }
+        const el = document.getElementById('week-' + dayKey);
+        if (!el) return;
+        el.classList.toggle('visible');
+        activeWeekDay = el.classList.contains('visible') ? dayKey : null;
+    }
+</script>
 </body>
 </html>
