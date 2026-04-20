@@ -20,5 +20,8 @@ tasks_data.json
 .idea/
 
 
+# Environment variables (API keys — never commit)
+.env
+
 # Development Notes
 .notes

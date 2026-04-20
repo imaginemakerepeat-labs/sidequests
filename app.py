@@ -3,6 +3,9 @@ from datetime import datetime, timedelta
 import json
 import os
 import calendar
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__, template_folder="templates")
 
@@ -32,6 +35,7 @@ def load_data():
             "archived_tasks": data.get("archived_tasks", []),
             "xp": data.get("xp", 0),
             "level": data.get("level", 1),
+            "profile": data.get("profile", {}),
         }
     except (json.JSONDecodeError, OSError):
         save_data(DEFAULT_DATA)
@@ -505,6 +509,51 @@ def delete_archived(index):
         save_data(data)
 
     return redirect(url_for("index"))
+
+
+@app.route("/profile", methods=["GET", "POST"])
+def profile():
+    data = load_data()
+    saved = False
+
+    if request.method == "POST":
+        mission = request.form.get("mission", "").strip()[:300]
+        values_raw = request.form.get("values", "").strip()
+        values = [v.strip().lower() for v in values_raw.split(",") if v.strip()]
+        goals = [g.strip() for g in request.form.getlist("goals[]") if g.strip()]
+        ai_model = request.form.get("ai_model", "claude")
+        if ai_model not in ["claude", "openai", "ollama"]:
+            ai_model = "claude"
+        api_key = request.form.get("api_key", "").strip()
+        ollama_url = request.form.get("ollama_url", "http://localhost:11434").strip()
+        ollama_model = request.form.get("ollama_model", "").strip()
+
+        data["profile"] = {
+            "mission": mission,
+            "user_values": values,
+            "goals": goals,
+            "ai_model": ai_model,
+            "api_key": api_key,
+            "ollama_url": ollama_url,
+            "ollama_model": ollama_model,
+        }
+        save_data(data)
+        saved = True
+
+    prof = data.get("profile", {})
+    return render_template(
+        "profile.html",
+        profile={
+            "mission": prof.get("mission", ""),
+            "user_values": prof.get("user_values", prof.get("values", [])),
+            "goals": prof.get("goals", []),
+            "ai_model": prof.get("ai_model", "claude"),
+            "api_key": prof.get("api_key", ""),
+            "ollama_url": prof.get("ollama_url", "http://localhost:11434"),
+            "ollama_model": prof.get("ollama_model", ""),
+        },
+        saved=saved
+    )
 
 
 if __name__ == "__main__":

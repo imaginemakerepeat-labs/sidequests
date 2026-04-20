@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile — SideQuest</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg:        #0e0f14;
+            --surface:   #16181f;
+            --surface2:  #1e2029;
+            --border:    #2a2d3a;
+            --accent:    #f0c040;
+            --accent2:   #5b8cff;
+            --success:   #3ecf6e;
+            --danger:    #ff5b5b;
+            --muted:     #555970;
+            --text:      #e4e6f0;
+            --subtext:   #8b8fa8;
+            --mono:      'Space Mono', monospace;
+            --sans:      'DM Sans', sans-serif;
+            --radius:    10px;
+            --radius-sm: 6px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--sans);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 0 0 80px;
+        }
+
+        .header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo {
+            font-family: var(--mono);
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--accent);
+            letter-spacing: 0.05em;
+            text-decoration: none;
+        }
+
+        .logo span { color: var(--subtext); font-weight: 400; }
+
+        .header-divider { color: var(--border); font-size: 1.2rem; }
+
+        .header-title {
+            font-family: var(--mono);
+            font-size: 0.75rem;
+            color: var(--subtext);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .main {
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 28px 24px 0;
+        }
+
+        /* PAGE HEADER */
+        .page-header {
+            margin-bottom: 28px;
+        }
+
+        .page-header h1 {
+            font-family: var(--mono);
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--accent);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .page-header p {
+            font-size: 0.85rem;
+            color: var(--subtext);
+            line-height: 1.6;
+        }
+
+        /* FLASH / SUCCESS */
+        .flash {
+            background: #0d2a1a;
+            border: 1px solid var(--success);
+            color: var(--success);
+            border-radius: var(--radius);
+            padding: 10px 16px;
+            font-size: 0.82rem;
+            font-family: var(--mono);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* SECTION CARD */
+        .profile-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+
+        .profile-section-header {
+            padding: 14px 18px 12px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+        }
+
+        .section-label {
+            font-family: var(--mono);
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--accent);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .section-hint {
+            font-size: 0.75rem;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        .profile-section-body {
+            padding: 16px 18px;
+        }
+
+        /* FIELDS */
+        .field {
+            margin-bottom: 14px;
+        }
+
+        .field:last-child { margin-bottom: 0; }
+
+        .field label {
+            display: block;
+            font-size: 0.68rem;
+            font-weight: 600;
+            color: var(--subtext);
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            margin-bottom: 6px;
+        }
+
+        .field input,
+        .field textarea,
+        .field select {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 9px 12px;
+            border-radius: var(--radius-sm);
+            font-family: var(--sans);
+            font-size: 0.85rem;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .field input:focus,
+        .field textarea:focus,
+        .field select:focus { border-color: var(--accent2); }
+
+        .field input::placeholder,
+        .field textarea::placeholder { color: var(--muted); }
+
+        .field textarea {
+            resize: vertical;
+            min-height: 90px;
+            line-height: 1.6;
+        }
+
+        .field textarea.tall { min-height: 120px; }
+
+        .char-hint {
+            font-size: 0.66rem;
+            color: var(--muted);
+            margin-top: 4px;
+            font-family: var(--mono);
+        }
+
+        /* VALUES CHIPS */
+        .values-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+            margin-bottom: 10px;
+        }
+
+        .value-chip {
+            font-family: var(--mono);
+            font-size: 0.65rem;
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            color: var(--subtext);
+            cursor: pointer;
+            transition: all 0.15s;
+            user-select: none;
+            background: var(--bg);
+        }
+
+        .value-chip:hover { border-color: var(--accent2); color: var(--accent2); }
+        .value-chip.selected { border-color: var(--accent2); color: var(--accent2); background: #0e1a3a; }
+
+        .values-custom {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .values-custom input {
+            flex: 1;
+        }
+
+        .btn-add-value {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--subtext);
+            padding: 9px 14px;
+            border-radius: var(--radius-sm);
+            font-family: var(--mono);
+            font-size: 0.72rem;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.15s;
+        }
+
+        .btn-add-value:hover { border-color: var(--accent2); color: var(--accent2); }
+
+        /* GOALS LIST */
+        .goals-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .goal-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .goal-row input {
+            flex: 1;
+        }
+
+        .btn-remove {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: 0.8rem;
+            padding: 6px 8px;
+            border-radius: var(--radius-sm);
+            transition: all 0.15s;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+
+        .btn-remove:hover { color: var(--danger); border-color: var(--danger); }
+
+        .btn-add-goal {
+            background: transparent;
+            border: 1px dashed var(--border);
+            color: var(--muted);
+            padding: 8px 14px;
+            border-radius: var(--radius-sm);
+            font-family: var(--mono);
+            font-size: 0.68rem;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.15s;
+            text-align: left;
+            letter-spacing: 0.04em;
+        }
+
+        .btn-add-goal:hover { border-color: var(--accent2); color: var(--accent2); }
+
+        /* API KEY */
+        .api-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .api-row input { flex: 1; font-family: var(--mono); font-size: 0.75rem; }
+
+        .btn-reveal {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--subtext);
+            padding: 9px 12px;
+            border-radius: var(--radius-sm);
+            font-size: 0.72rem;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: all 0.15s;
+        }
+
+        .btn-reveal:hover { border-color: var(--border); color: var(--text); }
+
+        .api-note {
+            font-size: 0.68rem;
+            color: var(--muted);
+            margin-top: 5px;
+            line-height: 1.5;
+        }
+
+        /* COMPLETENESS INDICATOR */
+        .completeness {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 10px 14px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+        }
+
+        .completeness-bar {
+            flex: 1;
+            height: 4px;
+            background: var(--border);
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .completeness-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent2), var(--accent));
+            border-radius: 999px;
+            transition: width 0.4s ease;
+        }
+
+        .completeness-label {
+            font-family: var(--mono);
+            font-size: 0.62rem;
+            color: var(--subtext);
+            white-space: nowrap;
+        }
+
+        /* FORM ACTIONS */
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-top: 24px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-family: var(--sans);
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 9px 18px;
+            border-radius: var(--radius-sm);
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            transition: opacity 0.15s, transform 0.1s;
+            white-space: nowrap;
+        }
+
+        .btn:active { transform: scale(0.97); }
+        .btn-primary { background: var(--accent); color: #000; }
+        .btn-ghost { background: transparent; color: var(--subtext); border: 1px solid var(--border); }
+        .btn-ghost:hover { color: var(--text); }
+
+        .save-status {
+            font-size: 0.75rem;
+            color: var(--muted);
+            font-family: var(--mono);
+        }
+    </style>
+</head>
+<body>
+
+<header class="header">
+    <a class="logo" href="/">SIDE<span>QUEST</span></a>
+    <span class="header-divider">/</span>
+    <span class="header-title">Profile</span>
+</header>
+
+<div class="main">
+
+    <div class="page-header">
+        <h1>⚔️ Your Quest Profile</h1>
+        <p>This is what Query uses to score your tasks. The more honest you are here, the more meaningful your XP becomes.</p>
+    </div>
+
+    {% if saved %}
+        <div class="flash">✓ Profile saved — your quests will now be scored against this.</div>
+    {% endif %}
+
+    <div class="completeness">
+        <div class="completeness-bar">
+            <div class="completeness-fill" id="completenessFill" style="width: 0%"></div>
+        </div>
+        <span class="completeness-label" id="completenessLabel">Profile incomplete</span>
+    </div>
+
+    <form action="/profile" method="post" id="profileForm">
+
+        <!-- MISSION -->
+        <div class="profile-section">
+            <div class="profile-section-header">
+                <span class="section-label">Mission Statement</span>
+                <span class="section-hint">One or two sentences. Why do you do what you do?</span>
+            </div>
+            <div class="profile-section-body">
+                <div class="field">
+                    <textarea
+                        name="mission"
+                        class="tall"
+                        placeholder="e.g. I want to build things that matter, stay healthy for my family, and create a life that inspires the people around me."
+                        id="missionField"
+                    >{{ profile.mission or '' }}</textarea>
+                    <div class="char-hint" id="missionCount">0 / 300</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VALUES -->
+        <div class="profile-section">
+            <div class="profile-section-header">
+                <span class="section-label">Core Values</span>
+                <span class="section-hint">Pick what resonates or add your own.</span>
+            </div>
+            <div class="profile-section-body">
+                <div class="values-grid" id="valuesGrid">
+                    {% set preset_values = ['Family', 'Health', 'Business', 'Community', 'Creativity', 'Learning', 'Finance', 'Fun', 'Fitness', 'Spirituality', 'Relationships', 'Service'] %}
+                    {% set profile_values_lower = profile.user_values | default([]) | map('lower') | list %}
+                    {% for v in preset_values %}
+                        <span class="value-chip {% if v.lower() in profile_values_lower %}selected{% endif %}"
+                              onclick="toggleValue(this, '{{ v.lower() }}')">{{ v }}</span>
+                    {% endfor %}
+                    {% set preset_lower = preset_values | map('lower') | list %}
+                    {% for v in (profile.user_values or []) %}
+                        {% if v.lower() not in preset_lower %}
+                            <span class="value-chip selected custom-chip"
+                                  onclick="toggleValue(this, '{{ v.lower() }}')">{{ v }}</span>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                <input type="hidden" name="values" id="valuesHidden" value="{{ (profile.user_values or []) | join(',') }}">
+                <div class="values-custom">
+                    <input type="text" id="customValueInput" placeholder="Add a value…" maxlength="30">
+                    <button type="button" class="btn-add-value" onclick="addCustomValue()">＋ Add</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- GOALS -->
+        <div class="profile-section">
+            <div class="profile-section-header">
+                <span class="section-label">Current Goals</span>
+                <span class="section-hint">What are you working toward right now? Be specific.</span>
+            </div>
+            <div class="profile-section-body">
+                <div class="goals-list" id="goalsList">
+                    {% if profile.goals %}
+                        {% for goal in profile.goals %}
+                            <div class="goal-row">
+                                <input type="text" name="goals[]" value="{{ goal }}" placeholder="e.g. Grow IMR Substack to 500 subscribers">
+                                <button type="button" class="btn-remove" onclick="removeGoal(this)" title="Remove">✕</button>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="goal-row">
+                            <input type="text" name="goals[]" placeholder="e.g. Grow IMR Substack to 500 subscribers">
+                            <button type="button" class="btn-remove" onclick="removeGoal(this)" title="Remove">✕</button>
+                        </div>
+                    {% endif %}
+                </div>
+                <button type="button" class="btn-add-goal" onclick="addGoal()">＋ Add another goal</button>
+            </div>
+        </div>
+
+        <!-- AI MODEL -->
+        <div class="profile-section">
+            <div class="profile-section-header">
+                <span class="section-label">AI Evaluator</span>
+                <span class="section-hint">Choose which model scores your tasks.</span>
+            </div>
+            <div class="profile-section-body">
+                <div class="field">
+                    <label>Model</label>
+                    <select name="ai_model" id="aiModel" onchange="updateModelUI()">
+                        <option value="claude" {% if (profile.ai_model or 'claude') == 'claude' %}selected{% endif %}>Claude (Anthropic) — Recommended</option>
+                        <option value="openai" {% if profile.ai_model == 'openai' %}selected{% endif %}>GPT-4o (OpenAI)</option>
+                        <option value="ollama" {% if profile.ai_model == 'ollama' %}selected{% endif %}>Ollama (Local — no API key needed)</option>
+                    </select>
+                </div>
+
+                <!-- Cloud API key (Claude + OpenAI) -->
+                <div class="field" id="apiKeySection">
+                    <label>API Key</label>
+                    <div class="api-row">
+                        <input type="password" name="api_key" id="apiKeyField"
+                               placeholder="sk-ant-…"
+                               value="{{ profile.api_key or '' }}">
+                        <button type="button" class="btn-reveal" onclick="toggleKey()">Show</button>
+                    </div>
+                    <div class="api-note">
+                        Stored in <code>tasks_data.json</code> on your machine only — never sent anywhere except directly to the AI API.
+                    </div>
+                </div>
+
+                <!-- Ollama settings -->
+                <div class="field" id="ollamaSection" style="display:none;">
+                    <label>Ollama URL</label>
+                    <input type="text" name="ollama_url" id="ollamaUrl"
+                           placeholder="http://localhost:11434"
+                           value="{{ profile.ollama_url or 'http://localhost:11434' }}">
+                    <div class="api-note">Default is <code>http://localhost:11434</code> — change only if you've moved Ollama to a different port.</div>
+                </div>
+                <div class="field" id="ollamaModelSection" style="display:none;">
+                    <label>Ollama Model</label>
+                    <div class="api-row">
+                        <input type="text" name="ollama_model" id="ollamaModelField"
+                               placeholder="e.g. llama3, mistral, gemma3"
+                               value="{{ profile.ollama_model or '' }}">
+                        <button type="button" class="btn-reveal" id="pingBtn" onclick="pingOllama()" style="white-space:nowrap;min-width:70px;">Ping</button>
+                    </div>
+                    <div class="api-note" id="ollamaPingResult">Enter the model name exactly as it appears in <code>ollama list</code>.</div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save Profile</button>
+            <a href="/" class="btn btn-ghost">← Back</a>
+            <span class="save-status" id="saveStatus"></span>
+        </div>
+
+    </form>
+
+</div>
+
+<script>
+    // --- VALUES ---
+    let selectedValues = new Set(
+        "{{ (profile.user_values or []) | join(',') }}"
+            .split(',')
+            .map(v => v.trim().toLowerCase())
+            .filter(Boolean)
+    );
+
+    function toggleValue(el, value) {
+        if (selectedValues.has(value)) {
+            selectedValues.delete(value);
+            el.classList.remove('selected');
+            if (el.classList.contains('custom-chip') && selectedValues.size === 0) {
+                el.remove();
+            } else if (el.classList.contains('custom-chip')) {
+                el.remove();
+            }
+        } else {
+            selectedValues.add(value);
+            el.classList.add('selected');
+        }
+        syncValues();
+        updateCompleteness();
+    }
+
+    function addCustomValue() {
+        const input = document.getElementById('customValueInput');
+        const raw = input.value.trim();
+        if (!raw) return;
+        const lower = raw.toLowerCase();
+
+        // Check if already exists in grid
+        const existing = [...document.querySelectorAll('.value-chip')].find(
+            el => el.textContent.trim().toLowerCase() === lower
+        );
+        if (existing) {
+            existing.classList.add('selected');
+            selectedValues.add(lower);
+            syncValues();
+            input.value = '';
+            return;
+        }
+
+        const chip = document.createElement('span');
+        chip.className = 'value-chip selected custom-chip';
+        chip.textContent = raw;
+        chip.onclick = () => toggleValue(chip, lower);
+        document.getElementById('valuesGrid').appendChild(chip);
+        selectedValues.add(lower);
+        syncValues();
+        input.value = '';
+        updateCompleteness();
+    }
+
+    document.getElementById('customValueInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); addCustomValue(); }
+    });
+
+    function syncValues() {
+        document.getElementById('valuesHidden').value = [...selectedValues].join(',');
+    }
+
+    // --- GOALS ---
+    function addGoal() {
+        const list = document.getElementById('goalsList');
+        const row = document.createElement('div');
+        row.className = 'goal-row';
+        row.innerHTML = `
+            <input type="text" name="goals[]" placeholder="e.g. Run a 5K this summer">
+            <button type="button" class="btn-remove" onclick="removeGoal(this)" title="Remove">✕</button>
+        `;
+        list.appendChild(row);
+        row.querySelector('input').focus();
+        updateCompleteness();
+    }
+
+    function removeGoal(btn) {
+        const rows = document.querySelectorAll('.goal-row');
+        if (rows.length <= 1) {
+            btn.closest('.goal-row').querySelector('input').value = '';
+            return;
+        }
+        btn.closest('.goal-row').remove();
+        updateCompleteness();
+    }
+
+    // --- API KEY REVEAL ---
+    function toggleKey() {
+        const field = document.getElementById('apiKeyField');
+        const btn = event.target;
+        if (field.type === 'password') {
+            field.type = 'text';
+            btn.textContent = 'Hide';
+        } else {
+            field.type = 'password';
+            btn.textContent = 'Show';
+        }
+    }
+
+    function updateModelUI() {
+        const model = document.getElementById('aiModel').value;
+        const isOllama = model === 'ollama';
+
+        document.getElementById('apiKeySection').style.display = isOllama ? 'none' : 'block';
+        document.getElementById('ollamaSection').style.display = isOllama ? 'block' : 'none';
+        document.getElementById('ollamaModelSection').style.display = isOllama ? 'block' : 'none';
+
+        if (!isOllama) {
+            document.getElementById('apiKeyField').placeholder = model === 'claude' ? 'sk-ant-…' : 'sk-…';
+        }
+    }
+
+    async function pingOllama() {
+        const btn = document.getElementById('pingBtn');
+        const result = document.getElementById('ollamaPingResult');
+        const url = (document.getElementById('ollamaUrl').value.trim() || 'http://localhost:11434');
+        const model = document.getElementById('ollamaModelField').value.trim();
+
+        btn.textContent = '…';
+        btn.disabled = true;
+        result.style.color = 'var(--muted)';
+        result.textContent = 'Connecting to Ollama…';
+
+        try {
+            const res = await fetch(url + '/api/tags', { signal: AbortSignal.timeout(4000) });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const data = await res.json();
+            const modelNames = (data.models || []).map(m => m.name);
+            if (modelNames.length === 0) {
+                result.style.color = 'var(--accent)';
+                result.textContent = '⚠ Ollama reachable but no models found. Run: ollama pull ' + (model || 'llama3');
+            } else if (model && !modelNames.some(n => n.startsWith(model))) {
+                result.style.color = 'var(--accent)';
+                result.textContent = '⚠ Model "' + model + '" not found. Available: ' + modelNames.join(', ');
+            } else {
+                result.style.color = 'var(--success)';
+                result.textContent = '✓ Connected. Models: ' + modelNames.join(', ');
+            }
+        } catch (e) {
+            result.style.color = 'var(--danger)';
+            result.textContent = '✕ Could not reach Ollama at ' + url + ' — is it running?';
+        }
+
+        btn.textContent = 'Ping';
+        btn.disabled = false;
+    }
+
+    // Init on load
+    updateModelUI();
+
+    // --- COMPLETENESS ---
+    function updateCompleteness() {
+        let score = 0;
+        const total = 3;
+
+        const mission = document.getElementById('missionField').value.trim();
+        if (mission.length > 20) score++;
+        if (selectedValues.size > 0) score++;
+
+        const goals = [...document.querySelectorAll('#goalsList input[name="goals[]"]')]
+            .filter(i => i.value.trim().length > 3);
+        if (goals.length > 0) score++;
+
+        const pct = Math.round((score / total) * 100);
+        document.getElementById('completenessFill').style.width = pct + '%';
+
+        const labels = ['Profile incomplete', 'Getting there…', 'Almost ready', 'Profile complete ✓'];
+        document.getElementById('completenessLabel').textContent = labels[score];
+    }
+
+    // --- CHAR COUNT ---
+    const missionField = document.getElementById('missionField');
+    const missionCount = document.getElementById('missionCount');
+
+    function updateMissionCount() {
+        const len = missionField.value.length;
+        missionCount.textContent = `${len} / 300`;
+        missionCount.style.color = len > 270 ? 'var(--accent)' : 'var(--muted)';
+    }
+
+    missionField.addEventListener('input', () => {
+        updateMissionCount();
+        updateCompleteness();
+    });
+
+    document.querySelectorAll('#goalsList input').forEach(i =>
+        i.addEventListener('input', updateCompleteness)
+    );
+
+    // Init on load
+    updateMissionCount();
+    updateCompleteness();
+</script>
+</body>
+</html>
