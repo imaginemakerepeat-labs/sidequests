@@ -1,0 +1,16 @@
+{
+  "active_tasks": [],
+  "completed_tasks": [],
+  "archived_tasks": [],
+  "xp": 0,
+  "level": 1,
+  "profile": {
+    "mission": "",
+    "user_values": [],
+    "goals": [],
+    "ai_model": "claude",
+    "api_key": "",
+    "ollama_url": "http://localhost:11434",
+    "ollama_model": ""
+  }
+}
