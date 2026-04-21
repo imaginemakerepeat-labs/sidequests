@@ -422,21 +422,33 @@ def evaluate_task_with_ai(task, profile):
     Returns (score, reason, bonus) or (None, None, None) on failure.
     """
     ai_model = profile.get("ai_model", "claude")
-    mission  = profile.get("mission", "").strip()
-    values   = profile.get("user_values", [])
+    likes    = profile.get("likes", [])
+    values   = profile.get("values", [])
+    believes = profile.get("believes", [])
     goals    = profile.get("goals", [])
 
-    if not mission and not values and not goals:
+    if not likes and not values and not believes and not goals:
         print("[AI] No profile content — skipping")
         return None, None, None
 
-    prompt = f"""You are scoring a completed task against a person's mission, values, and goals.
+    def fmt(items, prefix):
+        if not items: return "  (none set)"
+        return "\n".join(f"  - {prefix} {s}" for s in items)
+
+    prompt = f"""You are scoring a completed task against a person's personal profile made up of statements about what they like, value, believe, and want to achieve.
 
 PROFILE
-Mission: {mission or 'Not set'}
-Values: {', '.join(values) if values else 'Not set'}
-Goals:
-{chr(10).join(f'- {g}' for g in goals) if goals else '- Not set'}
+I like...
+{fmt(likes, 'I like')}
+
+I value...
+{fmt(values, 'I value')}
+
+I believe...
+{fmt(believes, 'I believe')}
+
+My goal is...
+{fmt(goals, 'My goal is')}
 
 COMPLETED TASK
 Name: {task.get('name', '')}
@@ -444,11 +456,11 @@ Tags: {', '.join(task.get('tags', [])) or 'none'}
 Recurrence: {task.get('recurrence', 'one_off').replace('_', ' ')}
 Description: {task.get('description', '') or 'none'}
 
-Score how well completing this task aligns with the profile above.
+Score how well completing this task aligns with this person's profile.
+Consider all four dimensions — their likes, values, beliefs, and goals.
 Reply with a JSON object only — no markdown, no explanation outside the JSON.
-Both values must be properly quoted strings or integers.
-Example format: {{"score": 72, "reason": "Supports health value directly."}}
-Your response: {{"score": <integer 1-100>, "reason": "<one concise sentence>"}}"""
+Example: {{"score": 72, "reason": "Directly supports their goal of building a business that serves people first."}}
+Your response: {{"score": <integer 1-100>, "reason": "<one concise sentence tying the task to a specific part of their profile>"}}"""
 
     try:
         raw = None
@@ -733,31 +745,164 @@ def delete_archived(index):
     return redirect(url_for("index"))
 
 
+@app.route("/portrait", methods=["POST"])
+def portrait():
+    from flask import jsonify
+    data = load_data()
+    prof = data.get("profile", {})
+
+    likes    = prof.get("likes", [])
+    values   = prof.get("values", [])
+    believes = prof.get("believes", [])
+    goals    = prof.get("goals", [])
+
+    if not likes and not values and not believes and not goals:
+        return jsonify({"error": "Add some statements first, then generate your portrait."}), 400
+
+    def fmt(items, prefix):
+        if not items: return "  (none set)"
+        return "\n".join(f"  - {prefix} {s}" for s in items)
+
+    prompt = f"""You are reading a person's self-described profile made up of short personal statements. Produce three things:
+
+1. REFLECTION — 2 sentences in second person that mirror back what they've explicitly shared. Be specific — use their actual words and details. No generic language.
+
+2. EVALUATION — 2 sentences in second person that assess what this combination of traits, values, and goals suggests about how they operate, make decisions, or prioritize. Go beyond what they said — interpret the pattern. What does this profile suggest about how they move through the world?
+
+3. ASSUMPTIONS — 3 inferences this person did NOT explicitly state. Read between the lines. Frame tentatively: "You might...", "There's probably...", "It seems like...". Look for tensions, contradictions, or unspoken motivations. Make them genuinely interesting — not restatements of what they said.
+
+STATEMENTS
+I like...
+{fmt(likes, 'I like')}
+
+I value...
+{fmt(values, 'I value')}
+
+I believe...
+{fmt(believes, 'I believe')}
+
+My goal is...
+{fmt(goals, 'My goal is')}
+
+Reply with a JSON object only. No markdown, no explanation outside the JSON.
+Format: {{"reflection": "2 sentence reflection.", "evaluation": "2 sentence evaluation.", "assumptions": ["assumption one", "assumption two", "assumption three"]}}"""
+
+    try:
+        ai_model = prof.get("ai_model", "claude")
+        raw = None
+
+        if ai_model == "claude":
+            import anthropic
+            api_key = prof.get("api_key") or os.getenv("ANTHROPIC_API_KEY", "")
+            if not api_key:
+                return jsonify({"error": "No Claude API key set — add one in the AI Evaluator section below."}), 400
+            client = anthropic.Anthropic(api_key=api_key)
+            msg = client.messages.create(
+                model="claude-haiku-4-5-20251001",
+                max_tokens=300,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            raw = msg.content[0].text.strip()
+
+        elif ai_model == "openai":
+            import openai
+            api_key = prof.get("api_key") or os.getenv("OPENAI_API_KEY", "")
+            if not api_key:
+                return jsonify({"error": "No OpenAI API key set — add one in the AI Evaluator section below."}), 400
+            client = openai.OpenAI(api_key=api_key)
+            msg = client.chat.completions.create(
+                model="gpt-4o-mini",
+                max_tokens=300,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            raw = msg.choices[0].message.content.strip()
+
+        elif ai_model == "ollama":
+            import urllib.request
+            ollama_url   = prof.get("ollama_url", "http://localhost:11434").rstrip("/")
+            ollama_model = prof.get("ollama_model", "").strip()
+            if not ollama_model:
+                return jsonify({"error": "No Ollama model set — add one in the AI Evaluator section below."}), 400
+            payload = json.dumps({"model": ollama_model, "prompt": prompt, "stream": False}).encode()
+            req = urllib.request.Request(
+                f"{ollama_url}/api/generate",
+                data=payload,
+                headers={"Content-Type": "application/json"}
+            )
+            with urllib.request.urlopen(req, timeout=60) as resp:
+                raw = json.loads(resp.read())["response"].strip()
+            if "</think>" in raw:
+                raw = raw.split("</think>")[-1].strip()
+
+        else:
+            return jsonify({"error": "Unknown AI model selected."}), 400
+
+        if not raw:
+            return jsonify({"error": "AI returned an empty response."}), 500
+
+        # Parse JSON response
+        import re
+        raw_clean = raw.strip()
+        if raw_clean.startswith("```"):
+            raw_clean = raw_clean.split("```")[1]
+            if raw_clean.startswith("json"):
+                raw_clean = raw_clean[4:]
+        raw_clean = raw_clean.strip()
+        if "</think>" in raw_clean:
+            raw_clean = raw_clean.split("</think>")[-1].strip()
+        json_match = re.search(r'\{.*\}', raw_clean, re.DOTALL)
+        if json_match:
+            raw_clean = json_match.group(0)
+
+        try:
+            result = json.loads(raw_clean)
+            reflection  = str(result.get("reflection", "")).strip()
+            evaluation  = str(result.get("evaluation", "")).strip()
+            assumptions = [str(a).strip() for a in result.get("assumptions", []) if str(a).strip()]
+        except (json.JSONDecodeError, KeyError):
+            # Fallback: treat raw as plain text in reflection
+            reflection  = raw_clean
+            evaluation  = ""
+            assumptions = []
+
+        if not reflection:
+            return jsonify({"error": "AI returned an empty response."}), 500
+
+        # Persist back to profile
+        data["profile"]["reflection"]  = reflection
+        data["profile"]["evaluation"]  = evaluation
+        data["profile"]["assumptions"] = assumptions
+        save_data(data)
+
+        return jsonify({"reflection": reflection, "evaluation": evaluation, "assumptions": assumptions})
+
+    except Exception as e:
+        print(f"[Portrait] Error: {e}")
+        return jsonify({"error": "Could not generate portrait — check your API key and try again."}), 500
+
+
 @app.route("/profile", methods=["GET", "POST"])
 def profile():
     data = load_data()
     saved = False
 
     if request.method == "POST":
-        mission = request.form.get("mission", "").strip()[:300]
-        values_raw = request.form.get("values", "").strip()
-        values = [v.strip().lower() for v in values_raw.split(",") if v.strip()]
-        goals = [g.strip() for g in request.form.getlist("goals[]") if g.strip()]
+        def get_statements(key):
+            return [s.strip() for s in request.form.getlist(key) if s.strip()]
+
         ai_model = request.form.get("ai_model", "claude")
         if ai_model not in ["claude", "openai", "ollama"]:
             ai_model = "claude"
-        api_key = request.form.get("api_key", "").strip()
-        ollama_url = request.form.get("ollama_url", "http://localhost:11434").strip()
-        ollama_model = request.form.get("ollama_model", "").strip()
 
         data["profile"] = {
-            "mission": mission,
-            "user_values": values,
-            "goals": goals,
-            "ai_model": ai_model,
-            "api_key": api_key,
-            "ollama_url": ollama_url,
-            "ollama_model": ollama_model,
+            "likes":    get_statements("likes[]"),
+            "values":   get_statements("values[]"),
+            "believes": get_statements("believes[]"),
+            "goals":    get_statements("goals[]"),
+            "ai_model":     ai_model,
+            "api_key":      request.form.get("api_key", "").strip(),
+            "ollama_url":   request.form.get("ollama_url", "http://localhost:11434").strip(),
+            "ollama_model": request.form.get("ollama_model", "").strip(),
         }
         save_data(data)
         saved = True
@@ -766,13 +911,17 @@ def profile():
     return render_template(
         "profile.html",
         profile={
-            "mission": prof.get("mission", ""),
-            "user_values": prof.get("user_values", prof.get("values", [])),
-            "goals": prof.get("goals", []),
-            "ai_model": prof.get("ai_model", "claude"),
-            "api_key": prof.get("api_key", ""),
-            "ollama_url": prof.get("ollama_url", "http://localhost:11434"),
+            "likes":    prof.get("likes", []),
+            "values":   prof.get("values", []),
+            "believes": prof.get("believes", []),
+            "goals":    prof.get("goals", []),
+            "ai_model":     prof.get("ai_model", "claude"),
+            "api_key":      prof.get("api_key", ""),
+            "ollama_url":   prof.get("ollama_url", "http://localhost:11434"),
             "ollama_model": prof.get("ollama_model", ""),
+            "reflection":   prof.get("reflection", ""),
+            "evaluation":   prof.get("evaluation", ""),
+            "assumptions":  prof.get("assumptions", []),
         },
         saved=saved
     )
