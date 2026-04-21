@@ -1,757 +1,445 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profile — SideQuest</title>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg:        #0e0f14;
-            --surface:   #16181f;
-            --surface2:  #1e2029;
-            --border:    #2a2d3a;
-            --accent:    #f0c040;
-            --accent2:   #5b8cff;
-            --success:   #3ecf6e;
-            --danger:    #ff5b5b;
-            --muted:     #555970;
-            --text:      #e4e6f0;
-            --subtext:   #8b8fa8;
-            --mono:      'Space Mono', monospace;
-            --sans:      'DM Sans', sans-serif;
-            --radius:    10px;
-            --radius-sm: 6px;
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-
-        body {
-            font-family: var(--sans);
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-            padding: 0 0 80px;
-        }
-
-        .header {
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
-            padding: 14px 24px;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .logo {
-            font-family: var(--mono);
-            font-size: 0.95rem;
-            font-weight: 700;
-            color: var(--accent);
-            letter-spacing: 0.05em;
-            text-decoration: none;
-        }
-
-        .logo span { color: var(--subtext); font-weight: 400; }
-
-        .header-divider { color: var(--border); font-size: 1.2rem; }
-
-        .header-title {
-            font-family: var(--mono);
-            font-size: 0.75rem;
-            color: var(--subtext);
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-        }
-
-        .main {
-            max-width: 760px;
-            margin: 0 auto;
-            padding: 28px 24px 0;
-        }
-
-        /* PAGE HEADER */
-        .page-header {
-            margin-bottom: 28px;
-        }
-
-        .page-header h1 {
-            font-family: var(--mono);
-            font-size: 1rem;
-            font-weight: 700;
-            color: var(--accent);
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            margin-bottom: 6px;
-        }
-
-        .page-header p {
-            font-size: 0.85rem;
-            color: var(--subtext);
-            line-height: 1.6;
-        }
-
-        /* FLASH / SUCCESS */
-        .flash {
-            background: #0d2a1a;
-            border: 1px solid var(--success);
-            color: var(--success);
-            border-radius: var(--radius);
-            padding: 10px 16px;
-            font-size: 0.82rem;
-            font-family: var(--mono);
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        /* SECTION CARD */
-        .profile-section {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            margin-bottom: 16px;
-            overflow: hidden;
-        }
-
-        .profile-section-header {
-            padding: 14px 18px 12px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: baseline;
-            gap: 10px;
-        }
-
-        .section-label {
-            font-family: var(--mono);
-            font-size: 0.72rem;
-            font-weight: 700;
-            color: var(--accent);
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-        }
-
-        .section-hint {
-            font-size: 0.75rem;
-            color: var(--muted);
-            line-height: 1.5;
-        }
-
-        .profile-section-body {
-            padding: 16px 18px;
-        }
-
-        /* FIELDS */
-        .field {
-            margin-bottom: 14px;
-        }
-
-        .field:last-child { margin-bottom: 0; }
-
-        .field label {
-            display: block;
-            font-size: 0.68rem;
-            font-weight: 600;
-            color: var(--subtext);
-            text-transform: uppercase;
-            letter-spacing: 0.07em;
-            margin-bottom: 6px;
-        }
-
-        .field input,
-        .field textarea,
-        .field select {
-            width: 100%;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            color: var(--text);
-            padding: 9px 12px;
-            border-radius: var(--radius-sm);
-            font-family: var(--sans);
-            font-size: 0.85rem;
-            outline: none;
-            -webkit-appearance: none;
-        }
-
-        .field input:focus,
-        .field textarea:focus,
-        .field select:focus { border-color: var(--accent2); }
-
-        .field input::placeholder,
-        .field textarea::placeholder { color: var(--muted); }
-
-        .field textarea {
-            resize: vertical;
-            min-height: 90px;
-            line-height: 1.6;
-        }
-
-        .field textarea.tall { min-height: 120px; }
-
-        .char-hint {
-            font-size: 0.66rem;
-            color: var(--muted);
-            margin-top: 4px;
-            font-family: var(--mono);
-        }
-
-        /* VALUES CHIPS */
-        .values-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 7px;
-            margin-bottom: 10px;
-        }
-
-        .value-chip {
-            font-family: var(--mono);
-            font-size: 0.65rem;
-            padding: 4px 10px;
-            border-radius: 999px;
-            border: 1px solid var(--border);
-            color: var(--subtext);
-            cursor: pointer;
-            transition: all 0.15s;
-            user-select: none;
-            background: var(--bg);
-        }
-
-        .value-chip:hover { border-color: var(--accent2); color: var(--accent2); }
-        .value-chip.selected { border-color: var(--accent2); color: var(--accent2); background: #0e1a3a; }
-
-        .values-custom {
-            display: flex;
-            gap: 8px;
-            margin-top: 8px;
-        }
-
-        .values-custom input {
-            flex: 1;
-        }
-
-        .btn-add-value {
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            color: var(--subtext);
-            padding: 9px 14px;
-            border-radius: var(--radius-sm);
-            font-family: var(--mono);
-            font-size: 0.72rem;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: all 0.15s;
-        }
-
-        .btn-add-value:hover { border-color: var(--accent2); color: var(--accent2); }
-
-        /* GOALS LIST */
-        .goals-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-bottom: 10px;
-        }
-
-        .goal-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .goal-row input {
-            flex: 1;
-        }
-
-        .btn-remove {
-            background: transparent;
-            border: 1px solid transparent;
-            color: var(--muted);
-            cursor: pointer;
-            font-size: 0.8rem;
-            padding: 6px 8px;
-            border-radius: var(--radius-sm);
-            transition: all 0.15s;
-            line-height: 1;
-            flex-shrink: 0;
-        }
-
-        .btn-remove:hover { color: var(--danger); border-color: var(--danger); }
-
-        .btn-add-goal {
-            background: transparent;
-            border: 1px dashed var(--border);
-            color: var(--muted);
-            padding: 8px 14px;
-            border-radius: var(--radius-sm);
-            font-family: var(--mono);
-            font-size: 0.68rem;
-            cursor: pointer;
-            width: 100%;
-            transition: all 0.15s;
-            text-align: left;
-            letter-spacing: 0.04em;
-        }
-
-        .btn-add-goal:hover { border-color: var(--accent2); color: var(--accent2); }
-
-        /* API KEY */
-        .api-row {
-            display: flex;
-            gap: 8px;
-        }
-
-        .api-row input { flex: 1; font-family: var(--mono); font-size: 0.75rem; }
-
-        .btn-reveal {
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            color: var(--subtext);
-            padding: 9px 12px;
-            border-radius: var(--radius-sm);
-            font-size: 0.72rem;
-            cursor: pointer;
-            flex-shrink: 0;
-            transition: all 0.15s;
-        }
-
-        .btn-reveal:hover { border-color: var(--border); color: var(--text); }
-
-        .api-note {
-            font-size: 0.68rem;
-            color: var(--muted);
-            margin-top: 5px;
-            line-height: 1.5;
-        }
-
-        /* COMPLETENESS INDICATOR */
-        .completeness {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 20px;
-            padding: 10px 14px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-        }
-
-        .completeness-bar {
-            flex: 1;
-            height: 4px;
-            background: var(--border);
-            border-radius: 999px;
-            overflow: hidden;
-        }
-
-        .completeness-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--accent2), var(--accent));
-            border-radius: 999px;
-            transition: width 0.4s ease;
-        }
-
-        .completeness-label {
-            font-family: var(--mono);
-            font-size: 0.62rem;
-            color: var(--subtext);
-            white-space: nowrap;
-        }
-
-        /* FORM ACTIONS */
-        .form-actions {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            margin-top: 24px;
-        }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            font-family: var(--sans);
-            font-size: 0.8rem;
-            font-weight: 600;
-            padding: 9px 18px;
-            border-radius: var(--radius-sm);
-            border: none;
-            cursor: pointer;
-            text-decoration: none;
-            transition: opacity 0.15s, transform 0.1s;
-            white-space: nowrap;
-        }
-
-        .btn:active { transform: scale(0.97); }
-        .btn-primary { background: var(--accent); color: #000; }
-        .btn-ghost { background: transparent; color: var(--subtext); border: 1px solid var(--border); }
-        .btn-ghost:hover { color: var(--text); }
-
-        .save-status {
-            font-size: 0.75rem;
-            color: var(--muted);
-            font-family: var(--mono);
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile — SideQuest</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:#0e0f14;--surface:#16181f;--surface2:#1e2029;--border:#2a2d3a;
+      --accent:#f0c040;--accent2:#5b8cff;--success:#3ecf6e;--danger:#ff5b5b;
+      --muted:#555970;--text:#e4e6f0;--subtext:#8b8fa8;
+      --mono:'Space Mono',monospace;--sans:'DM Sans',sans-serif;
+      --radius:10px;--radius-sm:6px;
+      --like-c:#3ecf6e;--like-bg:#0d2318;--like-bd:#1a4030;
+      --val-c:#5b8cff;--val-bg:#0d1a33;--val-bd:#1a2d55;
+      --bel-c:#c084fc;--bel-bg:#1a0d2e;--bel-bd:#2d1a50;
+      --goal-c:#f0c040;--goal-bg:#2a1e00;--goal-bd:#4a3600;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:80px;}
+    .header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;gap:12px;}
+    .logo{font-family:var(--mono);font-size:.9rem;font-weight:700;color:var(--accent);text-decoration:none;letter-spacing:.04em;}
+    .logo span{color:var(--subtext);font-weight:400;}
+    .header-sep{color:var(--border);}
+    .header-title{font-family:var(--mono);font-size:.7rem;color:var(--subtext);letter-spacing:.08em;text-transform:uppercase;}
+    .page{max-width:760px;margin:0 auto;padding:40px 24px 0;}
+    .page-heading{font-family:var(--mono);font-size:.65rem;letter-spacing:.14em;text-transform:uppercase;color:var(--subtext);margin-bottom:6px;}
+    .page-sub{font-size:.9rem;color:var(--subtext);margin-bottom:36px;line-height:1.6;}
+    .flash{background:#0d2318;border:1px solid #1a4030;border-left:3px solid var(--success);border-radius:var(--radius-sm);padding:10px 16px;font-size:.85rem;color:var(--success);margin-bottom:28px;font-family:var(--mono);letter-spacing:.04em;}
+    .stmt-section{margin-bottom:32px;}
+    .stmt-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+    .stmt-pill{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;padding:4px 12px;border-radius:99px;border:1px solid;font-weight:700;}
+    .pill-like{color:var(--like-c);background:var(--like-bg);border-color:var(--like-bd);}
+    .pill-value{color:var(--val-c);background:var(--val-bg);border-color:var(--val-bd);}
+    .pill-believe{color:var(--bel-c);background:var(--bel-bg);border-color:var(--bel-bd);}
+    .pill-goal{color:var(--goal-c);background:var(--goal-bg);border-color:var(--goal-bd);}
+    .stmt-count{font-size:.75rem;color:var(--muted);font-family:var(--mono);}
+    .stmt-hint{font-size:.78rem;color:var(--muted);font-style:italic;margin-bottom:10px;padding-left:2px;}
+    .stmt-rows{display:flex;flex-direction:column;gap:8px;margin-bottom:10px;}
+    .stmt-row{display:flex;align-items:center;gap:8px;}
+    .stmt-prefix{font-family:var(--mono);font-size:.7rem;min-width:96px;letter-spacing:.04em;flex-shrink:0;}
+    .prefix-like{color:var(--like-c);}
+    .prefix-value{color:var(--val-c);}
+    .prefix-believe{color:var(--bel-c);}
+    .prefix-goal{color:var(--goal-c);}
+    .stmt-input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 13px;font-size:.875rem;font-family:var(--sans);color:var(--text);outline:none;transition:border-color .15s;}
+    .stmt-input::placeholder{color:var(--muted);font-size:.82rem;}
+    .fl-like:focus{border-color:var(--like-c);}
+    .fl-value:focus{border-color:var(--val-c);}
+    .fl-believe:focus{border-color:var(--bel-c);}
+    .fl-goal:focus{border-color:var(--goal-c);}
+    .btn-remove{background:none;border:none;cursor:pointer;color:var(--muted);font-size:1rem;line-height:1;padding:4px 6px;border-radius:4px;opacity:.6;transition:opacity .15s,color .15s;}
+    .btn-remove:hover{opacity:1;color:var(--danger);}
+    .btn-add{display:inline-flex;align-items:center;gap:5px;background:none;border:1px dashed var(--border);border-radius:var(--radius-sm);padding:7px 14px;font-size:.75rem;font-family:var(--mono);color:var(--muted);cursor:pointer;letter-spacing:.05em;transition:border-color .15s,color .15s;margin-left:104px;}
+    .btn-add:hover{border-style:solid;color:var(--text);border-color:var(--subtext);}
+    .divider{border:none;border-top:1px solid var(--border);margin:36px 0;}
+    .section-label{font-family:var(--mono);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--subtext);margin-bottom:12px;}
+    .model-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
+    .model-card{flex:1;min-width:140px;border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;cursor:pointer;display:flex;flex-direction:column;gap:2px;transition:border-color .15s,background .15s;background:var(--surface2);}
+    .model-card:hover{border-color:var(--subtext);}
+    .model-card.selected{border-color:var(--accent2);background:#0d1a33;}
+    .model-card input[type=radio]{display:none;}
+    .model-name{font-family:var(--mono);font-size:.75rem;color:var(--text);font-weight:700;}
+    .model-card.selected .model-name{color:var(--accent2);}
+    .model-desc{font-size:.72rem;color:var(--subtext);}
+    .api-field-wrap{margin-bottom:12px;}
+    .field-label{font-size:.75rem;color:var(--subtext);margin-bottom:6px;font-family:var(--mono);letter-spacing:.04em;}
+    .field-row{display:flex;gap:8px;align-items:center;}
+    .field-input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 13px;font-size:.85rem;font-family:var(--mono);color:var(--text);outline:none;}
+    .field-input:focus{border-color:var(--accent2);}
+    .btn-toggle,.btn-ping{background:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 14px;font-size:.72rem;font-family:var(--mono);color:var(--subtext);cursor:pointer;}
+    .btn-toggle:hover{color:var(--text);border-color:var(--subtext);}
+    .btn-ping:hover{border-color:var(--success);color:var(--success);}
+    .ping-result{font-size:.75rem;color:var(--subtext);margin-top:6px;font-family:var(--mono);}
+    .save-row{display:flex;justify-content:flex-end;padding-top:4px;}
+    .btn-save{background:none;border:1px solid var(--accent);border-radius:var(--radius-sm);padding:10px 28px;font-family:var(--mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);cursor:pointer;transition:background .15s;}
+    .btn-save:hover{background:#1e1800;}
+    .portrait-card{border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;margin-bottom:36px;background:var(--surface);position:relative;}
+    .portrait-card.has-portrait{border-color:#2d1a50;background:#12091e;}
+    .portrait-label{font-family:var(--mono);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--bel-c);margin-bottom:12px;opacity:.7;}
+    .portrait-text{font-size:.95rem;line-height:1.7;color:var(--text);font-style:italic;min-height:48px;}
+    .portrait-placeholder{color:var(--muted);font-style:italic;font-size:.9rem;line-height:1.6;}
+    .portrait-actions{display:flex;align-items:center;gap:12px;margin-top:16px;}
+    .btn-portrait{background:none;border:1px solid var(--bel-bd);border-radius:var(--radius-sm);padding:8px 18px;font-family:var(--mono);font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--bel-c);cursor:pointer;transition:background .15s,border-color .15s;}
+    .btn-portrait:hover{background:var(--bel-bg);border-color:var(--bel-c);}
+    .btn-portrait:disabled{opacity:.4;cursor:not-allowed;}
+    .portrait-status{font-size:.75rem;color:var(--muted);font-family:var(--mono);}
+    .assumptions-block{margin-top:4px;}
+    .assumptions-list{list-style:none;display:flex;flex-direction:column;gap:8px;padding:0;}
+    .assumptions-list li{font-size:.875rem;line-height:1.6;color:var(--subtext);padding-left:16px;position:relative;}
+    .assumptions-list li::before{content:'→';position:absolute;left:0;color:var(--bel-c);opacity:.6;font-family:var(--mono);}
+    .portrait-sublabel{font-family:var(--mono);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--bel-c);opacity:.6;margin-bottom:6px;}
+  </style>
 </head>
 <body>
 
 <header class="header">
-    <a class="logo" href="/">SIDE<span>QUEST</span></a>
-    <span class="header-divider">/</span>
-    <span class="header-title">Profile</span>
+  <a href="/" class="logo">SIDE<span>QUEST</span></a>
+  <span class="header-sep">›</span>
+  <span class="header-title">Profile</span>
 </header>
 
-<div class="main">
+<div class="page">
+  <p class="page-heading">Your Profile</p>
+  <p class="page-sub">No grand mission statement required. Tell it what you like, what you stand for, what you believe, and where you're headed. The AI uses this to score your tasks.</p>
 
-    <div class="page-header">
-        <h1>⚔️ Your Quest Profile</h1>
-        <p>This is what Query uses to score your tasks. The more honest you are here, the more meaningful your XP becomes.</p>
+  {% if saved %}<div class="flash">✓ Profile saved.</div>{% endif %}
+
+  <!-- PORTRAIT CARD -->
+  <div class="portrait-card {% if profile.get('reflection') %}has-portrait{% endif %}" id="portraitCard">
+    <div id="portraitBody">
+      {% if profile.get('reflection') %}
+      <p class="portrait-sublabel">Reflection</p>
+      <p class="portrait-text">{{ profile['reflection'] }}</p>
+      {% if profile.get('evaluation') %}
+      <p class="portrait-sublabel" style="margin-top:14px;">Evaluation</p>
+      <p class="portrait-text">{{ profile['evaluation'] }}</p>
+      {% endif %}
+      {% if profile.get('assumptions') %}
+      <div class="assumptions-block">
+        <p class="portrait-sublabel" style="margin-top:14px;">What I'm assuming</p>
+        <ul class="assumptions-list">
+          {% for a in profile['assumptions'] %}<li>{{ a }}</li>{% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+      {% else %}
+      <p class="portrait-label">Your Portrait</p>
+      <p class="portrait-placeholder">Fill in your statements below, then generate your portrait to see how the AI reads you — and what it's assuming about you that you didn't say.</p>
+      {% endif %}
+    </div>
+    <div class="portrait-actions">
+      <button type="button" class="btn-portrait" id="portraitBtn" onclick="generatePortrait()">{% if profile.get('reflection') %}Regenerate{% else %}Generate Portrait{% endif %}</button>
+      <span class="portrait-status" id="portraitStatus"></span>
+    </div>
+  </div>
+
+  <form method="POST">
+
+    <!-- I LIKE -->
+    <div class="stmt-section">
+      <div class="stmt-header">
+        <span class="stmt-pill pill-like">I Like</span>
+        <span class="stmt-count" id="count-like"></span>
+      </div>
+      <p class="stmt-hint">Anything — movies, habits, ways of working, small pleasures.</p>
+      <div class="stmt-rows" id="rows-like">
+        {% if profile['likes'] %}{% for s in profile['likes'] %}
+        <div class="stmt-row">
+          <span class="stmt-prefix prefix-like">I like...</span>
+          <input class="stmt-input fl-like" type="text" name="likes[]" value="{{ s }}" placeholder="the movie Empire of the Sun...">
+          <button type="button" class="btn-remove" onclick="removeRow(this)">×</button>
+        </div>
+        {% endfor %}{% else %}
+        <div class="stmt-row">
+          <span class="stmt-prefix prefix-like">I like...</span>
+          <input class="stmt-input fl-like" type="text" name="likes[]" placeholder="the movie Empire of the Sun...">
+          <span style="width:30px"></span>
+        </div>
+        {% endif %}
+      </div>
+      <button type="button" class="btn-add" onclick="addRow('like','likes[]','I like...','prefix-like','fl-like','the movie Empire of the Sun...')">+ add another</button>
     </div>
 
-    {% if saved %}
-        <div class="flash">✓ Profile saved — your quests will now be scored against this.</div>
-    {% endif %}
-
-    <div class="completeness">
-        <div class="completeness-bar">
-            <div class="completeness-fill" id="completenessFill" style="width: 0%"></div>
+    <!-- I VALUE -->
+    <div class="stmt-section">
+      <div class="stmt-header">
+        <span class="stmt-pill pill-value">I Value</span>
+        <span class="stmt-count" id="count-value"></span>
+      </div>
+      <p class="stmt-hint">Principles and priorities — what matters to you beyond money or status.</p>
+      <div class="stmt-rows" id="rows-value">
+        {% if profile['values'] %}{% for s in profile['values'] %}
+        <div class="stmt-row">
+          <span class="stmt-prefix prefix-value">I value...</span>
+          <input class="stmt-input fl-value" type="text" name="values[]" value="{{ s }}" placeholder="people over monetary gain...">
+          <button type="button" class="btn-remove" onclick="removeRow(this)">×</button>
         </div>
-        <span class="completeness-label" id="completenessLabel">Profile incomplete</span>
+        {% endfor %}{% else %}
+        <div class="stmt-row">
+          <span class="stmt-prefix prefix-value">I value...</span>
+          <input class="stmt-input fl-value" type="text" name="values[]" placeholder="people over monetary gain...">
+          <span style="width:30px"></span>
+        </div>
+        {% endif %}
+      </div>
+      <button type="button" class="btn-add" onclick="addRow('value','values[]','I value...','prefix-value','fl-value','people over monetary gain...')">+ add another</button>
     </div>
 
-    <form action="/profile" method="post" id="profileForm">
-
-        <!-- MISSION -->
-        <div class="profile-section">
-            <div class="profile-section-header">
-                <span class="section-label">Mission Statement</span>
-                <span class="section-hint">One or two sentences. Why do you do what you do?</span>
-            </div>
-            <div class="profile-section-body">
-                <div class="field">
-                    <textarea
-                        name="mission"
-                        class="tall"
-                        placeholder="e.g. I want to build things that matter, stay healthy for my family, and create a life that inspires the people around me."
-                        id="missionField"
-                    >{{ profile.mission or '' }}</textarea>
-                    <div class="char-hint" id="missionCount">0 / 300</div>
-                </div>
-            </div>
+    <!-- I BELIEVE -->
+    <div class="stmt-section">
+      <div class="stmt-header">
+        <span class="stmt-pill pill-believe">I Believe</span>
+        <span class="stmt-count" id="count-believe"></span>
+      </div>
+      <p class="stmt-hint">Worldview and philosophy — big or small, certain or uncertain.</p>
+      <div class="stmt-rows" id="rows-believe">
+        {% if profile['believes'] %}{% for s in profile['believes'] %}
+        <div class="stmt-row">
+          <span class="stmt-prefix prefix-believe">I believe...</span>
+          <input class="stmt-input fl-believe" type="text" name="believes[]" value="{{ s }}" placeholder="consistency beats intensity...">
+          <button type="button" class="btn-remove" onclick="removeRow(this)">×</button>
         </div>
-
-        <!-- VALUES -->
-        <div class="profile-section">
-            <div class="profile-section-header">
-                <span class="section-label">Core Values</span>
-                <span class="section-hint">Pick what resonates or add your own.</span>
-            </div>
-            <div class="profile-section-body">
-                <div class="values-grid" id="valuesGrid">
-                    {% set preset_values = ['Family', 'Health', 'Business', 'Community', 'Creativity', 'Learning', 'Finance', 'Fun', 'Fitness', 'Spirituality', 'Relationships', 'Service'] %}
-                    {% set profile_values_lower = profile.user_values | default([]) | map('lower') | list %}
-                    {% for v in preset_values %}
-                        <span class="value-chip {% if v.lower() in profile_values_lower %}selected{% endif %}"
-                              onclick="toggleValue(this, '{{ v.lower() }}')">{{ v }}</span>
-                    {% endfor %}
-                    {% set preset_lower = preset_values | map('lower') | list %}
-                    {% for v in (profile.user_values or []) %}
-                        {% if v.lower() not in preset_lower %}
-                            <span class="value-chip selected custom-chip"
-                                  onclick="toggleValue(this, '{{ v.lower() }}')">{{ v }}</span>
-                        {% endif %}
-                    {% endfor %}
-                </div>
-                <input type="hidden" name="values" id="valuesHidden" value="{{ (profile.user_values or []) | join(',') }}">
-                <div class="values-custom">
-                    <input type="text" id="customValueInput" placeholder="Add a value…" maxlength="30">
-                    <button type="button" class="btn-add-value" onclick="addCustomValue()">＋ Add</button>
-                </div>
-            </div>
+        {% endfor %}{% else %}
+        <div class="stmt-row">
+          <span class="stmt-prefix prefix-believe">I believe...</span>
+          <input class="stmt-input fl-believe" type="text" name="believes[]" placeholder="consistency beats intensity...">
+          <span style="width:30px"></span>
         </div>
+        {% endif %}
+      </div>
+      <button type="button" class="btn-add" onclick="addRow('believe','believes[]','I believe...','prefix-believe','fl-believe','consistency beats intensity...')">+ add another</button>
+    </div>
 
-        <!-- GOALS -->
-        <div class="profile-section">
-            <div class="profile-section-header">
-                <span class="section-label">Current Goals</span>
-                <span class="section-hint">What are you working toward right now? Be specific.</span>
-            </div>
-            <div class="profile-section-body">
-                <div class="goals-list" id="goalsList">
-                    {% if profile.goals %}
-                        {% for goal in profile.goals %}
-                            <div class="goal-row">
-                                <input type="text" name="goals[]" value="{{ goal }}" placeholder="e.g. Grow IMR Substack to 500 subscribers">
-                                <button type="button" class="btn-remove" onclick="removeGoal(this)" title="Remove">✕</button>
-                            </div>
-                        {% endfor %}
-                    {% else %}
-                        <div class="goal-row">
-                            <input type="text" name="goals[]" placeholder="e.g. Grow IMR Substack to 500 subscribers">
-                            <button type="button" class="btn-remove" onclick="removeGoal(this)" title="Remove">✕</button>
-                        </div>
-                    {% endif %}
-                </div>
-                <button type="button" class="btn-add-goal" onclick="addGoal()">＋ Add another goal</button>
-            </div>
+    <!-- MY GOAL IS -->
+    <div class="stmt-section">
+      <div class="stmt-header">
+        <span class="stmt-pill pill-goal">My Goal Is</span>
+        <span class="stmt-count" id="count-goal"></span>
+      </div>
+      <p class="stmt-hint">Concrete directions — what you want to build, become, or accomplish.</p>
+      <div class="stmt-rows" id="rows-goal">
+        {% if profile['goals'] %}{% for s in profile['goals'] %}
+        <div class="stmt-row">
+          <span class="stmt-prefix prefix-goal">My goal is...</span>
+          <input class="stmt-input fl-goal" type="text" name="goals[]" value="{{ s }}" placeholder="to grow my Substack to 500 readers...">
+          <button type="button" class="btn-remove" onclick="removeRow(this)">×</button>
         </div>
-
-        <!-- AI MODEL -->
-        <div class="profile-section">
-            <div class="profile-section-header">
-                <span class="section-label">AI Evaluator</span>
-                <span class="section-hint">Choose which model scores your tasks.</span>
-            </div>
-            <div class="profile-section-body">
-                <div class="field">
-                    <label>Model</label>
-                    <select name="ai_model" id="aiModel" onchange="updateModelUI()">
-                        <option value="claude" {% if (profile.ai_model or 'claude') == 'claude' %}selected{% endif %}>Claude (Anthropic) — Recommended</option>
-                        <option value="openai" {% if profile.ai_model == 'openai' %}selected{% endif %}>GPT-4o (OpenAI)</option>
-                        <option value="ollama" {% if profile.ai_model == 'ollama' %}selected{% endif %}>Ollama (Local — no API key needed)</option>
-                    </select>
-                </div>
-
-                <!-- Cloud API key (Claude + OpenAI) -->
-                <div class="field" id="apiKeySection">
-                    <label>API Key</label>
-                    <div class="api-row">
-                        <input type="password" name="api_key" id="apiKeyField"
-                               placeholder="sk-ant-…"
-                               value="{{ profile.api_key or '' }}">
-                        <button type="button" class="btn-reveal" onclick="toggleKey()">Show</button>
-                    </div>
-                    <div class="api-note">
-                        Stored in <code>tasks_data.json</code> on your machine only — never sent anywhere except directly to the AI API.
-                    </div>
-                </div>
-
-                <!-- Ollama settings -->
-                <div class="field" id="ollamaSection" style="display:none;">
-                    <label>Ollama URL</label>
-                    <input type="text" name="ollama_url" id="ollamaUrl"
-                           placeholder="http://localhost:11434"
-                           value="{{ profile.ollama_url or 'http://localhost:11434' }}">
-                    <div class="api-note">Default is <code>http://localhost:11434</code> — change only if you've moved Ollama to a different port.</div>
-                </div>
-                <div class="field" id="ollamaModelSection" style="display:none;">
-                    <label>Ollama Model</label>
-                    <div class="api-row">
-                        <input type="text" name="ollama_model" id="ollamaModelField"
-                               placeholder="e.g. llama3, mistral, gemma3"
-                               value="{{ profile.ollama_model or '' }}">
-                        <button type="button" class="btn-reveal" id="pingBtn" onclick="pingOllama()" style="white-space:nowrap;min-width:70px;">Ping</button>
-                    </div>
-                    <div class="api-note" id="ollamaPingResult">Enter the model name exactly as it appears in <code>ollama list</code>.</div>
-                </div>
-
-            </div>
+        {% endfor %}{% else %}
+        <div class="stmt-row">
+          <span class="stmt-prefix prefix-goal">My goal is...</span>
+          <input class="stmt-input fl-goal" type="text" name="goals[]" placeholder="to grow my Substack to 500 readers...">
+          <span style="width:30px"></span>
         </div>
+        {% endif %}
+      </div>
+      <button type="button" class="btn-add" onclick="addRow('goal','goals[]','My goal is...','prefix-goal','fl-goal','to grow my Substack to 500 readers...')">+ add another</button>
+    </div>
 
-        <div class="form-actions">
-            <button type="submit" class="btn btn-primary">Save Profile</button>
-            <a href="/" class="btn btn-ghost">← Back</a>
-            <span class="save-status" id="saveStatus"></span>
+    <hr class="divider">
+
+    <!-- AI MODEL -->
+    <div style="margin-bottom:28px;">
+      <p class="section-label">AI Evaluator</p>
+      <div class="model-row">
+        <label class="model-card {% if profile['ai_model'] == 'claude' %}selected{% endif %}" onclick="selectModel('claude')">
+          <input type="radio" name="ai_model" value="claude" {% if profile['ai_model'] == 'claude' or not profile['ai_model'] %}checked{% endif %}>
+          <span class="model-name">Claude</span>
+          <span class="model-desc">Anthropic — Recommended</span>
+        </label>
+        <label class="model-card {% if profile['ai_model'] == 'openai' %}selected{% endif %}" onclick="selectModel('openai')">
+          <input type="radio" name="ai_model" value="openai" {% if profile['ai_model'] == 'openai' %}checked{% endif %}>
+          <span class="model-name">GPT-4o</span>
+          <span class="model-desc">OpenAI</span>
+        </label>
+        <label class="model-card {% if profile['ai_model'] == 'ollama' %}selected{% endif %}" onclick="selectModel('ollama')">
+          <input type="radio" name="ai_model" value="ollama" {% if profile['ai_model'] == 'ollama' %}checked{% endif %}>
+          <span class="model-name">Ollama</span>
+          <span class="model-desc">Local — no key needed</span>
+        </label>
+      </div>
+
+      <div id="apiKeySection">
+        <div class="api-field-wrap">
+          <p class="field-label">API Key</p>
+          <div class="field-row">
+            <input class="field-input" type="password" name="api_key" id="apiKeyField"
+              value="{{ profile['api_key'] }}" placeholder="sk-ant-...">
+            <button type="button" class="btn-toggle" onclick="toggleKey(event)">Show</button>
+          </div>
         </div>
+      </div>
 
-    </form>
+      <div id="ollamaSection" style="display:none">
+        <div class="api-field-wrap">
+          <p class="field-label">Ollama URL</p>
+          <div class="field-row">
+            <input class="field-input" type="text" name="ollama_url"
+              value="{{ profile['ollama_url'] or 'http://localhost:11434' }}" placeholder="http://localhost:11434">
+            <button type="button" class="btn-ping" id="pingBtn" onclick="pingOllama()">Ping</button>
+          </div>
+          <p class="ping-result" id="pingResult"></p>
+        </div>
+        <div class="api-field-wrap">
+          <p class="field-label">Model Name</p>
+          <input class="field-input" type="text" name="ollama_model"
+            value="{{ profile['ollama_model'] }}" placeholder="llama3, mistral, gemma3..." style="width:100%">
+        </div>
+      </div>
+    </div>
 
+    <hr class="divider">
+    <div class="save-row">
+      <button type="submit" class="btn-save">Save Profile</button>
+    </div>
+
+  </form>
 </div>
 
 <script>
-    // --- VALUES ---
-    let selectedValues = new Set(
-        "{{ (profile.user_values or []) | join(',') }}"
-            .split(',')
-            .map(v => v.trim().toLowerCase())
-            .filter(Boolean)
-    );
+var SECTIONS = {
+  like:    {name:'likes[]',    prefix:'I like...',       prefixCls:'prefix-like',    focusCls:'fl-like',    ph:'the movie Empire of the Sun...'},
+  value:   {name:'values[]',   prefix:'I value...',      prefixCls:'prefix-value',   focusCls:'fl-value',   ph:'people over monetary gain...'},
+  believe: {name:'believes[]', prefix:'I believe...',    prefixCls:'prefix-believe', focusCls:'fl-believe', ph:'consistency beats intensity...'},
+  goal:    {name:'goals[]',    prefix:'My goal is...',   prefixCls:'prefix-goal',    focusCls:'fl-goal',    ph:'to grow my Substack to 500 readers...'}
+};
 
-    function toggleValue(el, value) {
-        if (selectedValues.has(value)) {
-            selectedValues.delete(value);
-            el.classList.remove('selected');
-            if (el.classList.contains('custom-chip') && selectedValues.size === 0) {
-                el.remove();
-            } else if (el.classList.contains('custom-chip')) {
-                el.remove();
-            }
-        } else {
-            selectedValues.add(value);
-            el.classList.add('selected');
-        }
-        syncValues();
-        updateCompleteness();
+function updateCounts() {
+  Object.keys(SECTIONS).forEach(function(k) {
+    var rows = document.querySelectorAll('#rows-' + k + ' .stmt-input');
+    var n = Array.from(rows).filter(function(i){ return i.value.trim().length > 0; }).length;
+    var el = document.getElementById('count-' + k);
+    if (el) el.textContent = n + ' statement' + (n !== 1 ? 's' : '');
+  });
+}
+
+function addRow(key) {
+  var s = SECTIONS[key];
+  var rows = document.getElementById('rows-' + key);
+  var div = document.createElement('div');
+  div.className = 'stmt-row';
+  div.innerHTML = '<span class="stmt-prefix ' + s.prefixCls + '">' + s.prefix + '</span>' +
+    '<input class="stmt-input ' + s.focusCls + '" type="text" name="' + s.name + '" placeholder="' + s.ph + '">' +
+    '<button type="button" class="btn-remove" onclick="removeRow(this)">×</button>';
+  rows.appendChild(div);
+  div.querySelector('input').focus();
+  div.querySelector('input').addEventListener('input', updateCounts);
+  updateCounts();
+}
+
+function removeRow(btn) {
+  var row = btn.closest('.stmt-row');
+  var section = row.closest('.stmt-section');
+  if (section.querySelectorAll('.stmt-row').length <= 1) {
+    row.querySelector('input').value = '';
+    updateCounts();
+    return;
+  }
+  row.remove();
+  updateCounts();
+}
+
+function selectModel(val) {
+  document.querySelectorAll('.model-card').forEach(function(c){ c.classList.remove('selected'); });
+  var radio = document.querySelector('input[name="ai_model"][value="' + val + '"]');
+  if (radio) { radio.checked = true; radio.closest('.model-card').classList.add('selected'); }
+  document.getElementById('apiKeySection').style.display = (val === 'claude' || val === 'openai') ? 'block' : 'none';
+  document.getElementById('ollamaSection').style.display  = val === 'ollama' ? 'block' : 'none';
+  var kf = document.getElementById('apiKeyField');
+  if (kf) kf.placeholder = val === 'openai' ? 'sk-...' : 'sk-ant-...';
+}
+
+function toggleKey(e) {
+  var f = document.getElementById('apiKeyField');
+  f.type = f.type === 'password' ? 'text' : 'password';
+  e.currentTarget.textContent = f.type === 'password' ? 'Show' : 'Hide';
+}
+
+async function pingOllama() {
+  var btn = document.getElementById('pingBtn');
+  var res = document.getElementById('pingResult');
+  var url = (document.querySelector('[name="ollama_url"]').value.trim() || 'http://localhost:11434');
+  btn.textContent = '...'; btn.disabled = true;
+  res.style.color = 'var(--muted)'; res.textContent = 'Connecting...';
+  try {
+    var r = await fetch(url + '/api/tags', {signal: AbortSignal.timeout(4000)});
+    var data = await r.json();
+    var models = (data.models || []).map(function(m){ return m.name; }).join(', ') || 'none found';
+    res.style.color = 'var(--success)'; res.textContent = '✓ Connected. Models: ' + models;
+  } catch(e) {
+    res.style.color = 'var(--danger)'; res.textContent = '✗ Could not reach Ollama. Is it running?';
+  }
+  btn.textContent = 'Ping'; btn.disabled = false;
+}
+
+// wire up existing inputs
+document.querySelectorAll('.stmt-input').forEach(function(i){ i.addEventListener('input', updateCounts); });
+// wire up add buttons
+document.querySelectorAll('.btn-add').forEach(function(btn){
+  var key = btn.getAttribute('onclick').match(/addRow\('(\w+)'/)[1];
+  btn.setAttribute('onclick', '');
+  btn.addEventListener('click', function(){ addRow(key); });
+});
+
+selectModel("{{ profile['ai_model'] or 'claude' }}");
+updateCounts();
+
+
+async function generatePortrait() {
+  var btn = document.getElementById('portraitBtn');
+  var status = document.getElementById('portraitStatus');
+  var card = document.getElementById('portraitCard');
+  var body = document.getElementById('portraitBody');
+
+  btn.disabled = true;
+  status.textContent = 'Reading your statements...';
+  body.style.opacity = '0.4';
+
+  try {
+    var r = await fetch('/portrait', {method: 'POST'});
+    var data = await r.json();
+
+    if (data.error) {
+      status.style.color = 'var(--danger)';
+      status.textContent = data.error;
+      body.style.opacity = '1';
+    } else {
+      var html = '';
+      if (data.reflection) {
+        html += '<p class="portrait-sublabel">Reflection</p>';
+        html += '<p class="portrait-text">' + escHtml(data.reflection) + '</p>';
+      }
+      if (data.evaluation) {
+        html += '<p class="portrait-sublabel" style="margin-top:14px;">Evaluation</p>';
+        html += '<p class="portrait-text">' + escHtml(data.evaluation) + '</p>';
+      }
+      if (data.assumptions && data.assumptions.length) {
+        html += '<div class="assumptions-block">';
+        html += '<p class="portrait-sublabel" style="margin-top:14px;">What I\'m assuming</p>';
+        html += '<ul class="assumptions-list">';
+        data.assumptions.forEach(function(a){ html += '<li>' + escHtml(a) + '</li>'; });
+        html += '</ul></div>';
+      }
+      body.innerHTML = html;
+      body.style.opacity = '1';
+      card.classList.add('has-portrait');
+      btn.textContent = 'Regenerate';
+      status.textContent = '';
     }
+  } catch(e) {
+    status.style.color = 'var(--danger)';
+    status.textContent = 'Request failed. Are you connected?';
+    body.style.opacity = '1';
+  }
 
-    function addCustomValue() {
-        const input = document.getElementById('customValueInput');
-        const raw = input.value.trim();
-        if (!raw) return;
-        const lower = raw.toLowerCase();
+  btn.disabled = false;
+}
 
-        // Check if already exists in grid
-        const existing = [...document.querySelectorAll('.value-chip')].find(
-            el => el.textContent.trim().toLowerCase() === lower
-        );
-        if (existing) {
-            existing.classList.add('selected');
-            selectedValues.add(lower);
-            syncValues();
-            input.value = '';
-            return;
-        }
-
-        const chip = document.createElement('span');
-        chip.className = 'value-chip selected custom-chip';
-        chip.textContent = raw;
-        chip.onclick = () => toggleValue(chip, lower);
-        document.getElementById('valuesGrid').appendChild(chip);
-        selectedValues.add(lower);
-        syncValues();
-        input.value = '';
-        updateCompleteness();
-    }
-
-    document.getElementById('customValueInput').addEventListener('keydown', e => {
-        if (e.key === 'Enter') { e.preventDefault(); addCustomValue(); }
-    });
-
-    function syncValues() {
-        document.getElementById('valuesHidden').value = [...selectedValues].join(',');
-    }
-
-    // --- GOALS ---
-    function addGoal() {
-        const list = document.getElementById('goalsList');
-        const row = document.createElement('div');
-        row.className = 'goal-row';
-        row.innerHTML = `
-            <input type="text" name="goals[]" placeholder="e.g. Run a 5K this summer">
-            <button type="button" class="btn-remove" onclick="removeGoal(this)" title="Remove">✕</button>
-        `;
-        list.appendChild(row);
-        row.querySelector('input').focus();
-        updateCompleteness();
-    }
-
-    function removeGoal(btn) {
-        const rows = document.querySelectorAll('.goal-row');
-        if (rows.length <= 1) {
-            btn.closest('.goal-row').querySelector('input').value = '';
-            return;
-        }
-        btn.closest('.goal-row').remove();
-        updateCompleteness();
-    }
-
-    // --- API KEY REVEAL ---
-    function toggleKey() {
-        const field = document.getElementById('apiKeyField');
-        const btn = event.target;
-        if (field.type === 'password') {
-            field.type = 'text';
-            btn.textContent = 'Hide';
-        } else {
-            field.type = 'password';
-            btn.textContent = 'Show';
-        }
-    }
-
-    function updateModelUI() {
-        const model = document.getElementById('aiModel').value;
-        const isOllama = model === 'ollama';
-
-        document.getElementById('apiKeySection').style.display = isOllama ? 'none' : 'block';
-        document.getElementById('ollamaSection').style.display = isOllama ? 'block' : 'none';
-        document.getElementById('ollamaModelSection').style.display = isOllama ? 'block' : 'none';
-
-        if (!isOllama) {
-            document.getElementById('apiKeyField').placeholder = model === 'claude' ? 'sk-ant-…' : 'sk-…';
-        }
-    }
-
-    async function pingOllama() {
-        const btn = document.getElementById('pingBtn');
-        const result = document.getElementById('ollamaPingResult');
-        const url = (document.getElementById('ollamaUrl').value.trim() || 'http://localhost:11434');
-        const model = document.getElementById('ollamaModelField').value.trim();
-
-        btn.textContent = '…';
-        btn.disabled = true;
-        result.style.color = 'var(--muted)';
-        result.textContent = 'Connecting to Ollama…';
-
-        try {
-            const res = await fetch(url + '/api/tags', { signal: AbortSignal.timeout(4000) });
-            if (!res.ok) throw new Error('HTTP ' + res.status);
-            const data = await res.json();
-            const modelNames = (data.models || []).map(m => m.name);
-            if (modelNames.length === 0) {
-                result.style.color = 'var(--accent)';
-                result.textContent = '⚠ Ollama reachable but no models found. Run: ollama pull ' + (model || 'llama3');
-            } else if (model && !modelNames.some(n => n.startsWith(model))) {
-                result.style.color = 'var(--accent)';
-                result.textContent = '⚠ Model "' + model + '" not found. Available: ' + modelNames.join(', ');
-            } else {
-                result.style.color = 'var(--success)';
-                result.textContent = '✓ Connected. Models: ' + modelNames.join(', ');
-            }
-        } catch (e) {
-            result.style.color = 'var(--danger)';
-            result.textContent = '✕ Could not reach Ollama at ' + url + ' — is it running?';
-        }
-
-        btn.textContent = 'Ping';
-        btn.disabled = false;
-    }
-
-    // Init on load
-    updateModelUI();
-
-    // --- COMPLETENESS ---
-    function updateCompleteness() {
-        let score = 0;
-        const total = 3;
-
-        const mission = document.getElementById('missionField').value.trim();
-        if (mission.length > 20) score++;
-        if (selectedValues.size > 0) score++;
-
-        const goals = [...document.querySelectorAll('#goalsList input[name="goals[]"]')]
-            .filter(i => i.value.trim().length > 3);
-        if (goals.length > 0) score++;
-
-        const pct = Math.round((score / total) * 100);
-        document.getElementById('completenessFill').style.width = pct + '%';
-
-        const labels = ['Profile incomplete', 'Getting there…', 'Almost ready', 'Profile complete ✓'];
-        document.getElementById('completenessLabel').textContent = labels[score];
-    }
-
-    // --- CHAR COUNT ---
-    const missionField = document.getElementById('missionField');
-    const missionCount = document.getElementById('missionCount');
-
-    function updateMissionCount() {
-        const len = missionField.value.length;
-        missionCount.textContent = `${len} / 300`;
-        missionCount.style.color = len > 270 ? 'var(--accent)' : 'var(--muted)';
-    }
-
-    missionField.addEventListener('input', () => {
-        updateMissionCount();
-        updateCompleteness();
-    });
-
-    document.querySelectorAll('#goalsList input').forEach(i =>
-        i.addEventListener('input', updateCompleteness)
-    );
-
-    // Init on load
-    updateMissionCount();
-    updateCompleteness();
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 </script>
 </body>
 </html>
