@@ -343,6 +343,15 @@
 
         .badge.recur { border-color: var(--accent2); color: var(--accent2); }
         .badge.xp    { border-color: var(--accent);  color: var(--accent); }
+        .badge.ai-score { border-color: #a855f7; color: #a855f7; }
+
+        .ai-reason {
+            font-size: 0.75rem;
+            color: #a855f7;
+            margin-top: 5px;
+            font-style: italic;
+            line-height: 1.5;
+        }
 
         .task-desc {
             font-size: 0.82rem;
@@ -573,7 +582,16 @@
                 </div>
                 <div class="form-actions">
                     <button class="btn btn-primary" type="submit">Add Task</button>
+                    <button class="btn btn-ghost" type="button" onclick="previewTask()">⚡ Evaluate</button>
                     <button class="btn btn-ghost" type="button" onclick="toggleAdd()">Cancel</button>
+                </div>
+                <div id="previewResult" style="display:none;margin-top:12px;padding:11px 14px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);">
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                        <span style="font-family:var(--mono);font-size:0.65rem;color:var(--subtext);text-transform:uppercase;letter-spacing:.07em;">Alignment Score</span>
+                        <span id="previewScore" style="font-family:var(--mono);font-size:0.8rem;color:#a855f7;font-weight:700;"></span>
+                        <span id="previewPriority" style="font-family:var(--mono);font-size:0.62rem;padding:2px 7px;border-radius:999px;border:1px solid var(--accent);color:var(--accent);"></span>
+                    </div>
+                    <div id="previewReason" style="font-size:0.78rem;color:var(--subtext);font-style:italic;line-height:1.5;"></div>
                 </div>
             </form>
         </div>
@@ -708,8 +726,14 @@
                     <div class="task-card done">
                         <div class="task-top">
                             <span class="task-name">{{ task.name }}</span>
-                            {% if task.earned_xp %}<span class="badge xp">+{{ task.earned_xp }} XP</span>{% endif %}
+                            <div class="task-badges">
+                                {% if task.earned_xp %}<span class="badge xp">+{{ task.earned_xp }} XP</span>{% endif %}
+                                {% if task.ai_score %}<span class="badge ai-score">⚡ {{ task.ai_score }}</span>{% endif %}
+                            </div>
                         </div>
+                        {% if task.ai_reason %}
+                            <div class="ai-reason">{{ task.ai_reason }}</div>
+                        {% endif %}
                         {% if task.tags %}
                             <div class="task-tags">
                                 {% for tag in task.tags %}<span class="tag">{{ tag }}</span>{% endfor %}
@@ -718,6 +742,9 @@
                         {% if task.completed_at %}<div class="task-meta">{{ task.completed_at }}</div>{% endif %}
                         <div class="task-actions">
                             <a class="btn btn-archive btn-sm" href="/archive_completed/{{ loop.index0 }}">📦 Archive</a>
+                            {% if not task.ai_score %}
+                                <a class="btn btn-edit btn-sm" href="/evaluate_completed/{{ loop.index0 }}">⚡ Evaluate</a>
+                            {% endif %}
                             <a class="btn btn-danger btn-sm" href="/delete_completed/{{ loop.index0 }}" onclick="return confirm('Delete this completed task?')">✕ Delete</a>
                         </div>
                     </div>
@@ -765,6 +792,54 @@
 <script>
     function toggleAdd() {
         document.getElementById('addPanel').classList.toggle('open');
+    }
+
+    async function previewTask() {
+        const form = document.querySelector('#addPanel form');
+        const btn = document.querySelector('button[onclick="previewTask()"]');
+        const result = document.getElementById('previewResult');
+
+        const name = form.querySelector('[name="name"]').value.trim();
+        if (!name) {
+            alert('Enter a task name first.');
+            return;
+        }
+
+        btn.textContent = '…';
+        btn.disabled = true;
+        result.style.display = 'none';
+
+        const body = new URLSearchParams({
+            name,
+            description: form.querySelector('[name="description"]').value,
+            tags: form.querySelector('[name="tags"]').value,
+            priority: form.querySelector('[name="priority"]').value,
+        });
+
+        try {
+            const res = await fetch('/preview', { method: 'POST', body });
+            const data = await res.json();
+
+            if (data.error) {
+                document.getElementById('previewReason').textContent = data.error;
+                document.getElementById('previewScore').textContent = '';
+                document.getElementById('previewPriority').textContent = '';
+            } else {
+                document.getElementById('previewScore').textContent = data.score + ' / 100';
+                document.getElementById('previewPriority').textContent = 'Suggested: ' + data.suggested_priority_label;
+                document.getElementById('previewReason').textContent = data.reason;
+
+                // Auto-update the priority dropdown to the suggested value
+                form.querySelector('[name="priority"]').value = data.suggested_priority;
+            }
+            result.style.display = 'block';
+        } catch (e) {
+            document.getElementById('previewReason').textContent = 'Could not reach the evaluator.';
+            result.style.display = 'block';
+        }
+
+        btn.textContent = '⚡ Evaluate';
+        btn.disabled = false;
     }
 
     function toggleSection(id) {

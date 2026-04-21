@@ -360,10 +360,193 @@ def add():
         if next_due:
             task["next_due_at"] = format_timestamp(next_due)
 
+        # AI evaluation at creation — store score for reference
+        profile = data.get("profile", {})
+        score, reason, bonus = evaluate_task_with_ai(task, profile)
+        if score is not None:
+            task["ai_score"]  = score
+            task["ai_reason"] = reason
+
         data["active_tasks"].append(task)
         save_data(data)
 
     return redirect(url_for("index"))
+
+
+@app.route("/preview", methods=["POST"])
+def preview():
+    """Score a task against the profile without saving it. Returns JSON."""
+    from flask import jsonify
+    data = load_data()
+    profile = data.get("profile", {})
+
+    name        = request.form.get("name", "").strip()
+    description = request.form.get("description", "").strip()
+    tags_text   = request.form.get("tags", "").strip()
+    priority_raw = request.form.get("priority", "1")
+
+    try:
+        priority = int(priority_raw)
+    except ValueError:
+        priority = 1
+
+    if not name:
+        return jsonify({"error": "Task name is required"}), 400
+
+    task = {
+        "name": name,
+        "description": description,
+        "tags": parse_tags(tags_text),
+        "priority": priority,
+        "recurrence": "one_off",
+    }
+
+    score, reason, bonus = evaluate_task_with_ai(task, profile)
+
+    if score is None:
+        return jsonify({"error": "Could not evaluate — check your profile and AI settings"}), 500
+
+    suggested_priority = 1 if score < 40 else 2 if score < 70 else 3
+
+    return jsonify({
+        "score": score,
+        "reason": reason,
+        "suggested_priority": suggested_priority,
+        "suggested_priority_label": ["", "Low", "Medium", "High"][suggested_priority]
+    })
+
+
+def evaluate_task_with_ai(task, profile):
+    """
+    Calls the configured AI model to score a task against the user's profile.
+    Returns (score, reason, bonus) or (None, None, None) on failure.
+    """
+    ai_model = profile.get("ai_model", "claude")
+    mission  = profile.get("mission", "").strip()
+    values   = profile.get("user_values", [])
+    goals    = profile.get("goals", [])
+
+    if not mission and not values and not goals:
+        print("[AI] No profile content — skipping")
+        return None, None, None
+
+    prompt = f"""You are scoring a completed task against a person's mission, values, and goals.
+
+PROFILE
+Mission: {mission or 'Not set'}
+Values: {', '.join(values) if values else 'Not set'}
+Goals:
+{chr(10).join(f'- {g}' for g in goals) if goals else '- Not set'}
+
+COMPLETED TASK
+Name: {task.get('name', '')}
+Tags: {', '.join(task.get('tags', [])) or 'none'}
+Recurrence: {task.get('recurrence', 'one_off').replace('_', ' ')}
+Description: {task.get('description', '') or 'none'}
+
+Score how well completing this task aligns with the profile above.
+Reply with a JSON object only — no markdown, no explanation outside the JSON.
+Both values must be properly quoted strings or integers.
+Example format: {{"score": 72, "reason": "Supports health value directly."}}
+Your response: {{"score": <integer 1-100>, "reason": "<one concise sentence>"}}"""
+
+    try:
+        raw = None
+
+        if ai_model == "claude":
+            import anthropic
+            api_key = profile.get("api_key") or os.getenv("ANTHROPIC_API_KEY", "")
+            if not api_key:
+                print("[AI] Claude selected but no API key")
+                return None, None, None
+            client = anthropic.Anthropic(api_key=api_key)
+            msg = client.messages.create(
+                model="claude-haiku-4-5-20251001",
+                max_tokens=200,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            raw = msg.content[0].text.strip()
+
+        elif ai_model == "openai":
+            import openai
+            api_key = profile.get("api_key") or os.getenv("OPENAI_API_KEY", "")
+            if not api_key:
+                print("[AI] OpenAI selected but no API key")
+                return None, None, None
+            client = openai.OpenAI(api_key=api_key)
+            msg = client.chat.completions.create(
+                model="gpt-4o-mini",
+                max_tokens=200,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            raw = msg.choices[0].message.content.strip()
+
+        elif ai_model == "ollama":
+            import urllib.request
+            ollama_url   = profile.get("ollama_url", "http://localhost:11434").rstrip("/")
+            ollama_model = profile.get("ollama_model", "").strip()
+            if not ollama_model:
+                print("[AI] Ollama selected but no model name set")
+                return None, None, None
+            print(f"[AI] Calling Ollama at {ollama_url} with model {ollama_model}")
+            payload = json.dumps({
+                "model": ollama_model,
+                "prompt": prompt,
+                "stream": False,
+                "think": False
+            }).encode()
+            req = urllib.request.Request(
+                f"{ollama_url}/api/generate",
+                data=payload,
+                headers={"Content-Type": "application/json"}
+            )
+            with urllib.request.urlopen(req, timeout=120) as resp:
+                raw = json.loads(resp.read())["response"].strip()
+
+            # Strip <think>...</think> block if present (qwen3 thinking mode)
+            if "</think>" in raw:
+                raw = raw.split("</think>")[-1].strip()
+        else:
+            print(f"[AI] Unknown model: {ai_model}")
+            return None, None, None
+
+        print(f"[AI] Raw response: {raw[:200]}")
+
+        # Strip <think>...</think> block if present (qwen3 thinking mode)
+        if "</think>" in raw:
+            raw = raw.split("</think>")[-1].strip()
+
+        # Strip markdown fences if present
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+        raw = raw.strip()
+
+        # Replace smart/curly quotes with straight quotes
+        raw = raw.replace('\u201c', '"').replace('\u201d', '"')
+        raw = raw.replace('\u2018', "'").replace('\u2019', "'")
+        # Remove zero-width and non-breaking spaces
+        raw = raw.replace('\u00a0', ' ').replace('\u200b', '').replace('\ufeff', '')
+
+        # Extract just the JSON object if there's surrounding text
+        import re
+        json_match = re.search(r'\{[^{}]+\}', raw, re.DOTALL)
+        if json_match:
+            raw = json_match.group(0)
+
+        print(f"[AI] Parsing: {repr(raw[:100])}")
+        result = json.loads(raw)
+        score  = max(1, min(100, int(result["score"])))
+        reason = str(result["reason"])[:200]
+        bonus  = round(score / 100 * 15)
+
+        print(f"[AI] Score={score} Bonus={bonus} Reason={reason}")
+        return score, reason, bonus
+
+    except Exception as e:
+        print(f"[AI] Error: {e}")
+        return None, None, None
 
 
 @app.route("/complete/<int:index>")
@@ -381,7 +564,6 @@ def complete(index):
             data["level"] = new_level
 
         completed_dt = current_dt()
-
         task["completed_at"] = format_timestamp(completed_dt)
         task["earned_xp"] = earned
         data["completed_tasks"].insert(0, task)
@@ -391,6 +573,46 @@ def complete(index):
             data["active_tasks"].insert(0, recurring_copy)
 
         save_data(data)
+
+        # AI evaluation — synchronous
+        profile = data.get("profile", {})
+        print(f"[AI] Evaluating: {task.get('name')} | model={profile.get('ai_model')} | ollama_model={profile.get('ollama_model')}")
+        score, reason, bonus = evaluate_task_with_ai(task, profile)
+
+        if score is not None:
+            data = load_data()
+            if data["completed_tasks"] and data["completed_tasks"][0].get("name") == task.get("name"):
+                data["completed_tasks"][0]["ai_score"]  = score
+                data["completed_tasks"][0]["ai_reason"] = reason
+                data["completed_tasks"][0]["ai_bonus"]  = bonus
+                data["completed_tasks"][0]["earned_xp"] += bonus
+                data["xp"]   += bonus
+                data["level"] = data["xp"] // 50 + 1
+                save_data(data)
+
+    return redirect(url_for("index"))
+
+
+@app.route("/evaluate_completed/<int:index>")
+def evaluate_completed(index):
+    """Manually trigger AI evaluation on an already-completed task."""
+    data = load_data()
+    profile = data.get("profile", {})
+
+    if 0 <= index < len(data["completed_tasks"]):
+        task = data["completed_tasks"][index]
+        print(f"[AI] Manual evaluate: {task.get('name')}")
+        score, reason, bonus = evaluate_task_with_ai(task, profile)
+
+        if score is not None:
+            old_bonus = task.get("ai_bonus", 0)
+            task["ai_score"]  = score
+            task["ai_reason"] = reason
+            task["ai_bonus"]  = bonus
+            task["earned_xp"] = task.get("earned_xp", 0) - old_bonus + bonus
+            data["xp"]        = data["xp"] - old_bonus + bonus
+            data["level"]     = data["xp"] // 50 + 1
+            save_data(data)
 
     return redirect(url_for("index"))
 
